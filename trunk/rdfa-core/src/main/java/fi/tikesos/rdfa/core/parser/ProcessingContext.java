@@ -1,8 +1,10 @@
 package fi.tikesos.rdfa.core.parser;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
+import fi.tikesos.rdfa.core.datatype.IncompleteTriple;
 import fi.tikesos.rdfa.core.datatype.LString;
 import fi.tikesos.rdfa.core.registry.Registry;
 
@@ -13,10 +15,7 @@ import fi.tikesos.rdfa.core.registry.Registry;
  * @author ssakorho
  *
  */
-/**
- * @author ssakorho
- * 
- */
+
 public class ProcessingContext {
 	private ProcessingContext parentContext = null;
 	// Blank node handler
@@ -39,7 +38,7 @@ public class ProcessingContext {
 	private Registry termMappings;
 	private String language = null;
 	private String vocabulary = null;
-	private String base = null;
+	private URI base = null;
 	// Evaluation Context specific
 	private LString parentSubject = null;
 	private LString parentObject = null;
@@ -67,8 +66,6 @@ public class ProcessingContext {
 			// URI mappings values replaced with the local values
 			parentSubject = localContext.getParentSubject();
 			parentObject = localContext.getParentObject();
-			incompleteTriples = localContext.getParentContext()
-					.getIncompleteTriples();
 			vocabulary = localContext.getParentContext().getVocabulary();
 			base = localContext.getParentContext().getBase();
 			termMappings = localContext.getParentContext().getTermMappings();
@@ -104,7 +101,7 @@ public class ProcessingContext {
 			} else {
 				parentObject = localContext.getParentSubject();
 			}
-			incompleteTriples = localContext.getIncompleteTriples();
+			termMappings = localContext.getTermMappings();
 			vocabulary = localContext.getVocabulary();
 			base = localContext.getBase();
 		}
@@ -118,14 +115,14 @@ public class ProcessingContext {
 	public ProcessingContext getParentContext() {
 		return parentContext;
 	}
-	
+
 	/**
 	 * @return
 	 */
 	public BlankNodeHandler getBlankNodeHandler() {
 		return blankNodeHandler;
 	}
-	
+
 	/**
 	 * @return
 	 */
@@ -324,11 +321,7 @@ public class ProcessingContext {
 	 * @return
 	 */
 	public String resolvePrefix(String Prefix) {
-		String uri = prefixMappings.get(Prefix);
-		if (uri == null && parentContext != null) {
-			uri = parentContext.resolvePrefix(Prefix);
-		}
-		return uri;
+		return prefixMappings.get(Prefix);
 	}
 
 	/**
@@ -358,11 +351,7 @@ public class ProcessingContext {
 	 * @return
 	 */
 	public String resolveTerm(String Term) {
-		String uri = termMappings.get(Term);
-		if (uri == null && parentContext != null) {
-			uri = parentContext.getParentContext().resolveTerm(Term);
-		}
-		return uri;
+		return termMappings.get(Term);
 	}
 
 	/**
@@ -382,18 +371,32 @@ public class ProcessingContext {
 	public Registry getTermMappings() {
 		return termMappings;
 	}
+	
+	/**
+	 * @return
+	 */
+	public List<IncompleteTriple> getEvaluationIncompleteTriples() {
+		if (parentContext != null) {
+			if (parentContext.isSkipElement() == true) {
+				return parentContext.getEvaluationIncompleteTriples();
+			} else {
+				return parentContext.getLocalIncompleteTriples();
+			}
+		}
+		return null;
+	}
 
 	/**
 	 * @return
 	 */
-	public List<IncompleteTriple> getIncompleteTriples() {
+	public List<IncompleteTriple> getLocalIncompleteTriples() {
 		return incompleteTriples;
 	}
 
 	/**
 	 * @param incompleteTriples
 	 */
-	public void setIncompleteTriples(List<IncompleteTriple> incompleteTriples) {
+	public void setLocalIncompleteTriples(List<IncompleteTriple> incompleteTriples) {
 		this.incompleteTriples = incompleteTriples;
 	}
 
@@ -429,14 +432,43 @@ public class ProcessingContext {
 	 * @param base
 	 */
 	public void setBase(String base) {
-		this.base = base;
+		try {
+			this.base = new URI(base);
+		} catch (URISyntaxException exception) {
+			// URI violates RFC 2396
+		}
 	}
 
 	/**
 	 * @return
 	 */
-	public String getBase() {
+	public URI getBase() {
 		return base;
+	}
+
+	
+	/**
+	 * @param inputURI
+	 * @return
+	 */
+	public String getQualifiedNameU(String inputURI) {
+		String resultURI = null;
+		if (getBase() != null) {
+			try {
+				resultURI = base.resolve(inputURI).toString();
+			} catch (Exception exception) {
+				// URI violates RFC 2396
+			}
+		} else {
+			// Base is not set
+			try {
+				resultURI = new URI(inputURI).toString();
+				new URI(inputURI);
+			} catch (URISyntaxException exception) {
+				// URI violates RFC 2396
+			}
+		}
+		return resultURI;
 	}
 
 	/**
@@ -444,7 +476,13 @@ public class ProcessingContext {
 	 * @return
 	 */
 	public String getQualifiedNameCU(String CURIEorURI) {
-		// This implementation does not support SafeCURIE
+		if (CURIEorURI.startsWith("[") == true && CURIEorURI.endsWith("]") == true) {
+			// SafeCURIE
+			CURIEorURI = CURIEorURI.substring(1, CURIEorURI.length() - 1);
+			if (CURIEorURI.isEmpty() == true) {
+				return null;
+			}
+		}
 		int colon = CURIEorURI.indexOf(':');
 		String uri = null;
 		switch (colon) {
@@ -465,26 +503,18 @@ public class ProcessingContext {
 			}
 			break;
 		case 0:
+			// Default prefix
 			if (getVocabulary() != null && getVocabulary().isEmpty() == false) {
-				// Default prefix
-				uri = getVocabulary() + CURIEorURI;
+				uri = getVocabulary() + CURIEorURI.substring(1);
 			}
+//			uri = "http://www.w3.org/1999/xhtml/vocab#" + CURIEorURI.substring(1);
 			break;
 		case -1:
 			if (CURIEorURI.isEmpty() == true) {
-				// Empty CURIE
-				uri = "";
+				// Empty CURIE or relative URI
+				uri = base.toString();
 			} else {
-				if (getBase() != null) {
-					URI u = URI.create(getBase());
-					try {
-						uri = u.resolve(CURIEorURI).toString();
-					} catch (Exception exception) {
-						// TERMorCUERorURI violates RFC 2396
-					}
-				} else {
-					// Base is not set
-				}
+				uri = getQualifiedNameU(CURIEorURI);
 			}
 			break;
 		}
@@ -492,54 +522,56 @@ public class ProcessingContext {
 	}
 
 	/**
-	 * @param TERMorCURIEorURI
+	 * @param TERMorCURIEorAbsURI
 	 * @return
 	 */
-	public String getQualifiedNameTCU(String TERMorCURIEorURI) {
-		// This implementation does not support SafeCURIE
-		int colon = TERMorCURIEorURI.indexOf(':');
+	public String getQualifiedNameTCU(String TERMorCURIEorAbsURI) {
+		if (TERMorCURIEorAbsURI.startsWith("[") == true
+				&& TERMorCURIEorAbsURI.endsWith("]")) {
+			// SafeCURIE
+			TERMorCURIEorAbsURI = TERMorCURIEorAbsURI.substring(1,
+					TERMorCURIEorAbsURI.length() - 1);
+		}
+		int colon = TERMorCURIEorAbsURI.indexOf(':');
 		String uri = null;
 		switch (colon) {
 		default:
 			// Prefix
-			String prefix = TERMorCURIEorURI.substring(0, colon);
+			String prefix = TERMorCURIEorAbsURI.substring(0, colon);
 			String baseURI = resolvePrefix(prefix);
 			if (baseURI != null) {
-				uri = baseURI + TERMorCURIEorURI.substring(colon + 1);
+				uri = baseURI + TERMorCURIEorAbsURI.substring(colon + 1);
 			} else {
-				// Prefix not found! Could be URI
+				// Prefix not found! Could be Blank node
 				if (prefix.equals("_") == true) {
-					// Map blank node
-					uri = blankNodeHandler.mapBlankNode(TERMorCURIEorURI);
+					// Blank node
+					uri = blankNodeHandler.mapBlankNode(TERMorCURIEorAbsURI);
 				} else {
-					uri = TERMorCURIEorURI;
+					// Perhaps an absolute uri
+					try {
+						uri = new URI(TERMorCURIEorAbsURI).toString();
+					} catch (URISyntaxException exception) {
+					}
 				}
 			}
 			break;
 		case 0:
 			if (getVocabulary() != null) {
 				// Default prefix
-				uri = getVocabulary() + TERMorCURIEorURI;
+				uri = getVocabulary() + TERMorCURIEorAbsURI.substring(1);
 			}
 			break;
 		case -1:
-			// No colon - TERM or RELATIVE URI
-			if (TERMorCURIEorURI.isEmpty() == true) {
-				// Empty URI is not a RELATIVE URI according to RDFa 1.1
+			// No colon - TERM or EMPTY
+			if (TERMorCURIEorAbsURI.isEmpty() == true) {
 				uri = "";
 			} else {
 				// Try to resolve as a term
-				uri = resolveTerm(TERMorCURIEorURI);
+				uri = resolveTerm(TERMorCURIEorAbsURI);
 				if (uri == null) {
-					if (getBase() != null) {
-						URI u = URI.create(getBase());
-						try {
-							uri = u.resolve(TERMorCURIEorURI).toString();
-						} catch (Exception exception) {
-							// TERMorCUERorURI violates RFC 2396
-						}
-					} else {
-						// Base is not set
+					// Default prefix (if any)
+					if (getVocabulary() != null) {
+						uri = getVocabulary() + TERMorCURIEorAbsURI;
 					}
 				}
 			}

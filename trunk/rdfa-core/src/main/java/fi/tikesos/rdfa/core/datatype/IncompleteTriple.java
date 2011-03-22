@@ -1,6 +1,4 @@
-package fi.tikesos.rdfa.core.parser;
-
-import fi.tikesos.rdfa.core.datatype.LString;
+package fi.tikesos.rdfa.core.datatype;
 
 /**
  * @author ssakorho

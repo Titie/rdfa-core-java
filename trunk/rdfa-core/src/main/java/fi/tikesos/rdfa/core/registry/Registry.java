@@ -15,7 +15,7 @@ public class Registry {
 	}
 	
 	public Registry(Registry toCopy) {
-		this.mappings = new HashMap<String, String>(mappings);
+		this.mappings = new HashMap<String, String>(toCopy.getMappings());
 	}
 	
 	public String set(String Key, String Value) {
