@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.Arrays;
 
 import junit.framework.Assert;
 
@@ -49,6 +50,7 @@ public class RDFaParserTest {
 				"0188", "0189", "0190", "0193", "0195", "0196", "0197", "0198",
 				"0200", "0204", "0205", "0206", "0207", "0208", "0209", "0210",
 				"0211", "0212", "0213" };
+		String[] inverse = { "0042", "0107", "0122", "0140" };
 
 		// Register parser
 		RDFReaderFImpl.setBaseReaderClassName("RDFA-CORE",
@@ -60,8 +62,8 @@ public class RDFaParserTest {
 					Boolean.FALSE);
 
 			for (String currentTest : tests) {
-//				if (currentTest.compareTo("0189") != 0) continue;
-//				if (currentTest.compareTo("0189") != 0) continue;
+//				if (currentTest.compareTo("0186") == 0) break;
+//				if (currentTest.compareTo("0188") != 0) continue;
 				InputStream inputXML = this.getClass().getResourceAsStream(
 						"/tests/xhtml/" + currentTest + ".xhtml");
 				if (inputXML == null) continue;
@@ -91,8 +93,11 @@ public class RDFaParserTest {
 
 				// Execute query
 				boolean queryResult = queryExecution.execAsk();
-				System.out.println(currentTest + " "
-						+ (queryResult ? "[SUCCESS]" : "[FAIL!]"));
+				
+				// Compare result
+				boolean fail = Arrays.binarySearch(inverse, currentTest) >= 0 ? true : false;
+				System.out.println("Test: " + currentTest + " "
+						+ (queryResult != fail ? "[SUCCESS]" : "[FAIL!]"));
 			}
 		} catch (Exception e) {
 			// Exception

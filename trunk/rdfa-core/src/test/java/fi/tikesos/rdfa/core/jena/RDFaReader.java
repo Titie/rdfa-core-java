@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.net.URISyntaxException;
 
 import org.xml.sax.ContentHandler;
 import org.xml.sax.EntityResolver;
@@ -26,6 +27,9 @@ import fi.tikesos.rdfa.core.triple.TripleSink;
 public class RDFaReader implements RDFReader {
 	RDFErrorHandler errorHandler;
 
+	/* (non-Javadoc)
+	 * @see com.hp.hpl.jena.rdf.model.RDFReader#read(com.hp.hpl.jena.rdf.model.Model, java.io.InputStream, java.lang.String)
+	 */
 	@Override
 	public void read(Model model, InputStream r, String base) {
 		// Default method
@@ -37,40 +41,46 @@ public class RDFaReader implements RDFReader {
 			
 			try {
 				TripleSink sink = new JenaTripleSink(model);
-				ContentHandler parser = new RDFaParser(base, sink, null);
+				ContentHandler parser = new RDFaParser(base, sink, null, RDFaParser.XHTML_RDFA);
 				reader.setContentHandler(parser);
 				reader.parse(new InputSource(r));
 			} catch (IOException e) {
+				errorHandler.fatalError(e);
+			} catch (URISyntaxException e) {
 				errorHandler.fatalError(e);
 			}
 		} catch (SAXException e) {
 			errorHandler.fatalError(e);
 		}
 	}
-
-	@Override
+	/* (non-Javadoc)
+	 * @see com.hp.hpl.jena.rdf.model.RDFReader#read(com.hp.hpl.jena.rdf.model.Model, java.io.Reader, java.lang.String)
+	 */
 	public void read(Model model, Reader r, String base) {
 		// Not implemented
 		if (errorHandler != null) {
 			errorHandler.fatalError(new NoSuchMethodException("Method has not been implemented"));
 		}
 	}
-	
-	@Override
+	/* (non-Javadoc)
+	 * @see com.hp.hpl.jena.rdf.model.RDFReader#read(com.hp.hpl.jena.rdf.model.Model, java.lang.String)
+	 */
 	public void read(Model model, String url) {
 		// Not implemented
 		if (errorHandler != null) {
 			errorHandler.fatalError(new NoSuchMethodException("Method has not been implemented"));
 		}
 	}
-
-	@Override
+	/* (non-Javadoc)
+	 * @see com.hp.hpl.jena.rdf.model.RDFReader#setProperty(java.lang.String, java.lang.Object)
+	 */
 	public Object setProperty(String propName, Object propValue) {
 		// Set reader property
 		return null;
 	}
-
-	@Override
+	/* (non-Javadoc)
+	 * @see com.hp.hpl.jena.rdf.model.RDFReader#setErrorHandler(com.hp.hpl.jena.rdf.model.RDFErrorHandler)
+	 */
 	public RDFErrorHandler setErrorHandler(RDFErrorHandler errorHandler) {
 		// TODO Auto-generated method stub
 		RDFErrorHandler oldErrorHandler = errorHandler;

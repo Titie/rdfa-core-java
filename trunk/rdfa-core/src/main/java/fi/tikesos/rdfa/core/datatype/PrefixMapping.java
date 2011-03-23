@@ -1,4 +1,4 @@
-package fi.tikesos.rdfa.core.prefix;
+package fi.tikesos.rdfa.core.datatype;
 
 /**
  * @author ssakorho

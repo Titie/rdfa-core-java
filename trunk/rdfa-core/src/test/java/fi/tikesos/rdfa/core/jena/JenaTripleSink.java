@@ -8,7 +8,9 @@ import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.Resource;
 
-import fi.tikesos.rdfa.core.datatype.LString;
+import fi.tikesos.rdfa.core.datatype.Component;
+import fi.tikesos.rdfa.core.datatype.Language;
+import fi.tikesos.rdfa.core.datatype.Lexical;
 import fi.tikesos.rdfa.core.triple.TripleSink;
 
 /**
@@ -28,11 +30,11 @@ public class JenaTripleSink implements TripleSink {
 	}
 
 	/* (non-Javadoc)
-	 * @see fi.tikesos.rdfa.TripleSink#generateTriple(fi.tikesos.rdfa.LString, fi.tikesos.rdfa.LString, fi.tikesos.rdfa.LString)
+	 * @see fi.tikesos.rdfa.TripleSink#generateTriple(fi.tikesos.rdfa.Component, fi.tikesos.rdfa.Component, fi.tikesos.rdfa.Component)
 	 */
 	@Override
-	public void generateTriple(LString subject, LString predicate,
-			LString object) {
+	public void generateTriple(Component subject, Component predicate,
+			Component object) {
 		Resource s = createResource(subject.getValue());
 		Property p = model.createProperty(predicate.getValue());
 		Resource o = createResource(object.getValue());
@@ -41,20 +43,20 @@ public class JenaTripleSink implements TripleSink {
 	}
 
 	/* (non-Javadoc)
-	 * @see fi.tikesos.rdfa.TripleSink#generateTripleLiteral(fi.tikesos.rdfa.LString, fi.tikesos.rdfa.LString, fi.tikesos.rdfa.LString, fi.tikesos.rdfa.LString, fi.tikesos.rdfa.LString)
+	 * @see fi.tikesos.rdfa.TripleSink#generateTripleLiteral(fi.tikesos.rdfa.Component, fi.tikesos.rdfa.Component, fi.tikesos.rdfa.Component, fi.tikesos.rdfa.Component, fi.tikesos.rdfa.Component)
 	 */
 	@Override
-	public void generateTripleLiteral(LString subject, LString predicate,
-			LString object, LString language, LString datatype) {
+	public void generateTripleLiteral(Component subject, Component predicate,
+			Lexical lexical, Language language, Component datatype) {
 		Resource s = createResource(subject.getValue());
 		Property p = model.createProperty(predicate.getValue());
 		Literal o;
 		if (datatype != null) {
-			o = model.createTypedLiteral(object.getValue(), datatype.getValue());
+			o = model.createTypedLiteral(lexical.getValue(), datatype.getValue());
 		} else if (language != null) {
-			o = model.createLiteral(object.getValue(), language.getValue());
+			o = model.createLiteral(lexical.getValue(), language.getValue());
 		} else {
-			o = model.createLiteral(object.getValue());
+			o = model.createLiteral(lexical.getValue());
 		}
 		model.add(s, p, o);
 //		System.out.println("<" + s + "> <" + p + "> <" + o + ">");
