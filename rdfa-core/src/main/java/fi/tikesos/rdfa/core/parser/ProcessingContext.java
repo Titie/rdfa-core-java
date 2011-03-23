@@ -4,30 +4,32 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 
+import org.apache.xerces.util.XMLChar;
+
+import fi.tikesos.rdfa.core.datatype.BaseURI;
 import fi.tikesos.rdfa.core.datatype.IncompleteTriple;
-import fi.tikesos.rdfa.core.datatype.LString;
+import fi.tikesos.rdfa.core.datatype.Component;
 import fi.tikesos.rdfa.core.registry.Registry;
 
 /**
- * ProcessingContext contains both Local Context and
- * Evaluation Context defined in RDFa 1.1 specification.
+ * ProcessingContext contains both Local Context and Evaluation Context defined
+ * in the RDFa 1.1 specification.
  * 
  * @author ssakorho
- *
+ * 
  */
-
 public class ProcessingContext {
 	private ProcessingContext parentContext = null;
 	// Blank node handler
 	private BlankNodeHandler blankNodeHandler = null;
 	// Local Context specific
 	private boolean skipElement = false;
-	private LString newSubject = null;
-	private LString currentObjectResource = null;
+	private Component newSubject = null;
+	private Component currentObjectResource = null;
 	private String content = null;
 	private String[] property = null;
-	private String datatype = null;
-	// Location information (used for LString)
+	private Component datatype = null;
+	// Location information (used for Component)
 	private long beginTagStartLine = 0;
 	private long beginTagStartColumn = 0;
 	private long beginTagEndLine = 0;
@@ -38,15 +40,18 @@ public class ProcessingContext {
 	private Registry termMappings;
 	private String language = null;
 	private String vocabulary = null;
-	private URI base = null;
+	private BaseURI base = null;
 	// Evaluation Context specific
-	private LString parentSubject = null;
-	private LString parentObject = null;
+	private Component parentSubject = null;
+	private Component parentObject = null;
 
 	/**
 	 * Class constructor.
+	 * 
+	 * @throws URISyntaxException
 	 */
-	public ProcessingContext() {
+	public ProcessingContext(String baseURI) throws URISyntaxException {
+		this.base = new BaseURI(baseURI);
 		this.incompleteTriples = null;
 		this.prefixMappings = new Registry();
 		this.termMappings = new Registry();
@@ -55,20 +60,27 @@ public class ProcessingContext {
 
 	/**
 	 * @param localContext
+	 * @param beginTagStartLine
+	 * @param beginTagStartColumn
+	 * @param beginTagEndLine
+	 * @param beginTagEndColumn
 	 */
-	public ProcessingContext(ProcessingContext localContext) {
-		parentContext = localContext;
-		blankNodeHandler = localContext.getBlankNodeHandler();
+	public ProcessingContext(ProcessingContext localContext,
+			long beginTagStartLine, long beginTagStartColumn,
+			long beginTagEndLine, long beginTagEndColumn) {
+		this.parentContext = localContext;
+		this.blankNodeHandler = localContext.getBlankNodeHandler();
 		if (localContext.isSkipElement() == true) {
 			// If the skip element flag is 'true' then the new evaluation
 			// context is a copy of the current context that was passed in
 			// to this level of processing, with the language and list of
 			// URI mappings values replaced with the local values
-			parentSubject = localContext.getParentSubject();
-			parentObject = localContext.getParentObject();
-			vocabulary = localContext.getParentContext().getVocabulary();
-			base = localContext.getParentContext().getBase();
-			termMappings = localContext.getParentContext().getTermMappings();
+			this.parentSubject = localContext.getParentSubject();
+			this.parentObject = localContext.getParentObject();
+			this.vocabulary = localContext.getParentContext().getVocabulary();
+			this.base = localContext.getParentContext().getBase();
+			this.termMappings = localContext.getParentContext()
+					.getTermMappings();
 		} else {
 			// Otherwise, the values are:
 			// * the base is set to the base value of the current
@@ -90,23 +102,27 @@ public class ProcessingContext {
 			// * the default vocabulary is set to the value of
 			// the local default vocabulary.
 			if (localContext.getNewSubject() != null) {
-				parentSubject = localContext.getNewSubject();
+				this.parentSubject = localContext.getNewSubject();
 			} else {
-				parentSubject = localContext.getParentSubject();
+				this.parentSubject = localContext.getParentSubject();
 			}
 			if (localContext.getCurrentObjectResource() != null) {
-				parentObject = localContext.getCurrentObjectResource();
+				this.parentObject = localContext.getCurrentObjectResource();
 			} else if (localContext.getNewSubject() != null) {
-				parentObject = localContext.getNewSubject();
+				this.parentObject = localContext.getNewSubject();
 			} else {
-				parentObject = localContext.getParentSubject();
+				this.parentObject = localContext.getParentSubject();
 			}
-			termMappings = localContext.getTermMappings();
-			vocabulary = localContext.getVocabulary();
-			base = localContext.getBase();
+			this.termMappings = localContext.getTermMappings();
+			this.vocabulary = localContext.getVocabulary();
+			this.base = localContext.getBase();
 		}
-		prefixMappings = localContext.getPrefixMappings();
-		language = localContext.getLanguage();
+		this.beginTagStartLine = beginTagStartLine;
+		this.beginTagStartColumn = beginTagStartColumn;
+		this.beginTagEndLine = beginTagEndLine;
+		this.beginTagEndColumn = beginTagEndColumn;
+		this.prefixMappings = localContext.getPrefixMappings();
+		this.language = localContext.getLanguage();
 	}
 
 	/**
@@ -121,6 +137,13 @@ public class ProcessingContext {
 	 */
 	public BlankNodeHandler getBlankNodeHandler() {
 		return blankNodeHandler;
+	}
+
+	/**
+	 * @return
+	 */
+	public BaseURI getBase() {
+		return base;
 	}
 
 	/**
@@ -148,7 +171,7 @@ public class ProcessingContext {
 	/**
 	 * @return the newSubject
 	 */
-	public LString getNewSubject() {
+	public Component getNewSubject() {
 		return newSubject;
 	}
 
@@ -156,14 +179,14 @@ public class ProcessingContext {
 	 * @param newSubject
 	 *            the newSubject to set
 	 */
-	public void setNewSubject(LString newSubject) {
+	public void setNewSubject(Component newSubject) {
 		this.newSubject = newSubject;
 	}
 
 	/**
 	 * @return the currentObjectResource
 	 */
-	public LString getCurrentObjectResource() {
+	public Component getCurrentObjectResource() {
 		return currentObjectResource;
 	}
 
@@ -171,7 +194,7 @@ public class ProcessingContext {
 	 * @param currentObjectResource
 	 *            the currentObjectResource to set
 	 */
-	public void setCurrentObjectResource(LString currentObjectResource) {
+	public void setCurrentObjectResource(Component currentObjectResource) {
 		this.currentObjectResource = currentObjectResource;
 	}
 
@@ -208,7 +231,7 @@ public class ProcessingContext {
 	/**
 	 * @return the datatype
 	 */
-	public String getDatatype() {
+	public Component getDatatype() {
 		return datatype;
 	}
 
@@ -216,7 +239,7 @@ public class ProcessingContext {
 	 * @param datatype
 	 *            the datatype to set
 	 */
-	public void setDatatype(String datatype) {
+	public void setDatatype(Component datatype) {
 		this.datatype = datatype;
 	}
 
@@ -291,28 +314,28 @@ public class ProcessingContext {
 	/**
 	 * @return
 	 */
-	public LString getParentSubject() {
+	public Component getParentSubject() {
 		return parentSubject;
 	}
 
 	/**
 	 * @param parentSubject
 	 */
-	public void setParentSubject(LString parentSubject) {
+	public void setParentSubject(Component parentSubject) {
 		this.parentSubject = parentSubject;
 	}
 
 	/**
 	 * @return
 	 */
-	public LString getParentObject() {
+	public Component getParentObject() {
 		return parentObject;
 	}
 
 	/**
 	 * @param parentObject
 	 */
-	public void setParentObject(LString parentObject) {
+	public void setParentObject(Component parentObject) {
 		this.parentObject = parentObject;
 	}
 
@@ -371,7 +394,7 @@ public class ProcessingContext {
 	public Registry getTermMappings() {
 		return termMappings;
 	}
-	
+
 	/**
 	 * @return
 	 */
@@ -396,7 +419,8 @@ public class ProcessingContext {
 	/**
 	 * @param incompleteTriples
 	 */
-	public void setLocalIncompleteTriples(List<IncompleteTriple> incompleteTriples) {
+	public void setLocalIncompleteTriples(
+			List<IncompleteTriple> incompleteTriples) {
 		this.incompleteTriples = incompleteTriples;
 	}
 
@@ -433,50 +457,43 @@ public class ProcessingContext {
 	 */
 	public void setBase(String base) {
 		try {
-			this.base = new URI(base);
+			this.base.setURI(base);
 		} catch (URISyntaxException exception) {
 			// URI violates RFC 2396
 		}
 	}
 
 	/**
-	 * @return
-	 */
-	public URI getBase() {
-		return base;
-	}
-
-	
-	/**
 	 * @param inputURI
 	 * @return
 	 */
-	public String getQualifiedNameU(String inputURI) {
-		String resultURI = null;
-		if (getBase() != null) {
-			try {
-				resultURI = base.resolve(inputURI).toString();
-			} catch (Exception exception) {
-				// URI violates RFC 2396
+	public Component getQualifiedNameU(String inputURI) {
+		Component uri = null;
+		try {
+			if (inputURI.isEmpty() == true) {
+				// Empty input URI
+				uri = new Component(base);
+			} else {
+				URI iURI = new URI(inputURI);
+				if (iURI.isAbsolute() == true) {
+					uri = new Component(inputURI);
+				} else if (base != null) {
+					uri = new Component(base, iURI);
+				}
 			}
-		} else {
-			// Base is not set
-			try {
-				resultURI = new URI(inputURI).toString();
-				new URI(inputURI);
-			} catch (URISyntaxException exception) {
-				// URI violates RFC 2396
-			}
+		} catch (Exception exception) {
+			// Input URI violates RFC 2396
 		}
-		return resultURI;
+		return uri;
 	}
 
 	/**
 	 * @param CURIEorURI
 	 * @return
 	 */
-	public String getQualifiedNameCU(String CURIEorURI) {
-		if (CURIEorURI.startsWith("[") == true && CURIEorURI.endsWith("]") == true) {
+	public Component getQualifiedNameCU(String CURIEorURI) {
+		if (CURIEorURI.startsWith("[") == true
+				&& CURIEorURI.endsWith("]") == true) {
 			// SafeCURIE
 			CURIEorURI = CURIEorURI.substring(1, CURIEorURI.length() - 1);
 			if (CURIEorURI.isEmpty() == true) {
@@ -484,38 +501,36 @@ public class ProcessingContext {
 			}
 		}
 		int colon = CURIEorURI.indexOf(':');
-		String uri = null;
+		Component uri = null;
 		switch (colon) {
 		default:
 			// Prefix
 			String prefix = CURIEorURI.substring(0, colon);
 			String baseURI = resolvePrefix(prefix);
 			if (baseURI != null) {
-				uri = baseURI + CURIEorURI.substring(colon + 1);
+				uri = new Component(baseURI + CURIEorURI.substring(colon + 1));
 			} else {
 				// Prefix not found! Could be URI
 				if (prefix.equals("_") == true) {
 					// Map blank node
-					uri = blankNodeHandler.mapBlankNode(CURIEorURI);
+					uri = new Component(
+							blankNodeHandler.mapBlankNode(CURIEorURI));
 				} else {
-					uri = CURIEorURI;
+					uri = new Component(CURIEorURI);
 				}
 			}
 			break;
 		case 0:
 			// Default prefix
-			if (getVocabulary() != null && getVocabulary().isEmpty() == false) {
-				uri = getVocabulary() + CURIEorURI.substring(1);
+			if (getVocabulary() != null) {
+				String term = CURIEorURI.substring(1);
+				if (term.isEmpty() == true || XMLChar.isValidNCName(term) == true) {
+					uri = new Component(getVocabulary() + term);
+				}
 			}
-//			uri = "http://www.w3.org/1999/xhtml/vocab#" + CURIEorURI.substring(1);
 			break;
 		case -1:
-			if (CURIEorURI.isEmpty() == true) {
-				// Empty CURIE or relative URI
-				uri = base.toString();
-			} else {
-				uri = getQualifiedNameU(CURIEorURI);
-			}
+			uri = getQualifiedNameU(CURIEorURI);
 			break;
 		}
 		return uri;
@@ -525,7 +540,7 @@ public class ProcessingContext {
 	 * @param TERMorCURIEorAbsURI
 	 * @return
 	 */
-	public String getQualifiedNameTCU(String TERMorCURIEorAbsURI) {
+	public Component getQualifiedNameTCU(String TERMorCURIEorAbsURI) {
 		if (TERMorCURIEorAbsURI.startsWith("[") == true
 				&& TERMorCURIEorAbsURI.endsWith("]")) {
 			// SafeCURIE
@@ -533,23 +548,28 @@ public class ProcessingContext {
 					TERMorCURIEorAbsURI.length() - 1);
 		}
 		int colon = TERMorCURIEorAbsURI.indexOf(':');
-		String uri = null;
+		Component uri = null;
 		switch (colon) {
 		default:
 			// Prefix
 			String prefix = TERMorCURIEorAbsURI.substring(0, colon);
 			String baseURI = resolvePrefix(prefix);
 			if (baseURI != null) {
-				uri = baseURI + TERMorCURIEorAbsURI.substring(colon + 1);
+				uri = new Component(baseURI
+						+ TERMorCURIEorAbsURI.substring(colon + 1));
 			} else {
-				// Prefix not found! Could be Blank node
+				// Prefix not registered!
 				if (prefix.equals("_") == true) {
-					// Blank node
-					uri = blankNodeHandler.mapBlankNode(TERMorCURIEorAbsURI);
+					// Perhaps Blank node "_:*"
+					uri = new Component(
+							blankNodeHandler.mapBlankNode(TERMorCURIEorAbsURI));
 				} else {
 					// Perhaps an absolute uri
 					try {
-						uri = new URI(TERMorCURIEorAbsURI).toString();
+						URI absoluteURI = new URI(TERMorCURIEorAbsURI);
+						if (absoluteURI.isAbsolute() == true) {
+							uri = new Component(TERMorCURIEorAbsURI);
+						}
 					} catch (URISyntaxException exception) {
 					}
 				}
@@ -558,20 +578,27 @@ public class ProcessingContext {
 		case 0:
 			if (getVocabulary() != null) {
 				// Default prefix
-				uri = getVocabulary() + TERMorCURIEorAbsURI.substring(1);
+				String term = TERMorCURIEorAbsURI.substring(1);
+				if (term.isEmpty() == true || XMLChar.isValidNCName(term) == true) {
+					uri = new Component(getVocabulary() + term);
+				}
 			}
 			break;
 		case -1:
 			// No colon - TERM or EMPTY
 			if (TERMorCURIEorAbsURI.isEmpty() == true) {
-				uri = "";
+				uri = new Component("");
 			} else {
 				// Try to resolve as a term
-				uri = resolveTerm(TERMorCURIEorAbsURI);
-				if (uri == null) {
+				String termURI = resolveTerm(TERMorCURIEorAbsURI);
+				if (termURI != null) {
+					// Term uri
+					uri = new Component(termURI);
+				} else if (XMLChar.isValidNCName(TERMorCURIEorAbsURI) == true) {
 					// Default prefix (if any)
 					if (getVocabulary() != null) {
-						uri = getVocabulary() + TERMorCURIEorAbsURI;
+						uri = new Component(getVocabulary()
+								+ TERMorCURIEorAbsURI);
 					}
 				}
 			}

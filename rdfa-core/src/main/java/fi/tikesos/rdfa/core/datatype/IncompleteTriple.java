@@ -4,25 +4,24 @@ package fi.tikesos.rdfa.core.datatype;
  * @author ssakorho
  *
  */
-public class IncompleteTriple extends LString {
+public class IncompleteTriple {
+	private Component uri;
 	private boolean reverse;
 	
-	public IncompleteTriple(String value, long row, long column, boolean reverse) {
-		super(value, row, column);
+	public IncompleteTriple(Component uri, boolean reverse) {
+		this.uri = uri;
 		this.reverse = reverse;
 	}
-	
+	/**
+	 * @return
+	 */
+	public Component getURI() {
+		return uri;
+	}
 	/**
 	 * @return the reverse
 	 */
 	public boolean isReverse() {
 		return reverse;
-	}
-	
-	/**
-	 * @param reverse the reverse to set
-	 */
-	public void setReverse(boolean reverse) {
-		this.reverse = reverse;
 	}
 }
