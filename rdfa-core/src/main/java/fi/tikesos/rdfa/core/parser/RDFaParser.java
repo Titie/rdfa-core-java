@@ -2,10 +2,8 @@ package fi.tikesos.rdfa.core.parser;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -22,7 +20,7 @@ import fi.tikesos.rdfa.core.profile.ProfileLoader;
 import fi.tikesos.rdfa.core.triple.TripleSink;
 import fi.tikesos.rdfa.core.literal.LiteralCollector;
 
-/*
+/**
  * RDFaParserImpl
  * 
  * W3C RDFa 1.1 parser implementation for SAX.
@@ -37,6 +35,7 @@ public class RDFaParser implements ContentHandler {
 	public static final int XHTML_RDFA = 0;
 	public static final int XML_RDFA = 1;
 	private static final String DEFAULT_VOCABULARY = "http://www.w3.org/1999/xhtml/vocab#";
+	private static final String XHTML_PROFILE = "http://www.w3.org/1999/xhtml/vocab";
 	private static final String XHTML_NS = "http://www.w3.org/1999/xhtml";
 	private static final String XML_NS = "http://www.w3.org/XML/1998/namespace";
 	private static final String RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
@@ -57,16 +56,16 @@ public class RDFaParser implements ContentHandler {
 	 * 
 	 * @param base
 	 * @param tripleSink
-	 * @param profileHandler
+	 * @param profileLoader
 	 * @throws URISyntaxException
 	 */
 	public RDFaParser(String base, TripleSink tripleSink,
-			ProfileLoader profileHandler, int format) throws URISyntaxException {
+			ProfileLoader profileLoader, int format) throws URISyntaxException {
 		// Create default evaluation context
 		this.context = new ProcessingContext(base);
 		this.context.setVocabulary(DEFAULT_VOCABULARY);
 		this.context.setNewSubject(new Component(base));
-		this.profileLoader = profileHandler;
+		this.profileLoader = profileLoader;
 		this.tripleSink = tripleSink;
 		this.literalCollector = new LiteralCollector();
 		this.line = 0;
@@ -129,6 +128,25 @@ public class RDFaParser implements ContentHandler {
 	@Override
 	public void endPrefixMapping(String prefix) throws SAXException {
 		// End prefix-mapping
+	}
+	
+	public void processProfile(Profile profile) {
+		// Prefix mappings
+		for (Entry<String, String> p : profile.getPrefixMappings()
+				.entrySet()) {
+			context.registerPrefix(p.getKey(), p.getValue());
+		}
+		// Term mappings
+		for (Entry<String, String> p : profile.getTermMappings().entrySet()) {
+			// May not overwrite existing term mapping
+			if (context.resolveTerm(p.getKey()) == null) {
+				context.registerTerm(p.getKey(), p.getValue());
+			}
+		}
+		// Default vocabulary
+		if (profile.getDefaultVocabulary() != null) {
+			context.setVocabulary(profile.getDefaultVocabulary());
+		}		
 	}
 
 	/**
@@ -248,42 +266,41 @@ public class RDFaParser implements ContentHandler {
 				}
 			}
 		}
-
-		Set<String> registeredPrefixes = new HashSet<String>();
-		// Register namespace mappings defined at @prefix
-		for (PrefixMapping pm : prefixList) {
-			registeredPrefixes.add(pm.getPrefix());
-			context.registerPrefix(pm.getPrefix(), pm.getURI());
-		}
-		// Register namespace mappings defined at @xmlns:*
-		for (PrefixMapping pm : xmlnsList) {
-			if (registeredPrefixes.contains(pm.getPrefix()) == false) {
-				registeredPrefixes.add(pm.getPrefix());
-				context.registerPrefix(pm.getPrefix(), pm.getURI());
+		
+		if (depth == 1 && format == XHTML_RDFA) {
+			// Default vocabulary for XHTML
+			if (profileLoader != null) {
+				Profile pro = profileLoader.loadProfile(XHTML_PROFILE);
+				if (pro != null) {
+					processProfile(pro);
+				} else {
+					// Failed profile causes all subsequent elements
+					// to be ignored!
+				}
 			}
 		}
-
-		if (profile != null && profileLoader != null) {
+		
+		if (profileLoader != null && profile != null) {
 			// Load profiles
 			for (String profileURI : profile) {
 				Profile pro = profileLoader.loadProfile(profileURI);
-				// Prefix mappings
-				for (Entry<String, String> p : pro.getPrefixMappings()
-						.entrySet()) {
-					if (registeredPrefixes.contains(p.getKey()) == false) {
-						// Profile may not overwrite local prefix mappings
-						registeredPrefixes.add(p.getKey());
-						context.registerPrefix(p.getKey(), p.getValue());
-					}
-				}
-				// Term mappings
-				for (Entry<String, String> p : pro.getTermMappings().entrySet()) {
-					// May not overwrite existing term mapping
-					if (context.resolveTerm(p.getKey()) == null) {
-						context.registerTerm(p.getKey(), p.getValue());
-					}
+				if (pro != null) {
+					processProfile(pro);
+				} else {
+					// Failed profile causes all subsequent elements
+					// to be ignored!
 				}
 			}
+		}
+		
+		// Register namespace mappings defined at @xmlns:*
+		for (PrefixMapping pm : xmlnsList) {
+			context.registerPrefix(pm.getPrefix(), pm.getURI());
+		}
+
+		// Register namespace mappings defined at @prefix
+		for (PrefixMapping pm : prefixList) {
+			context.registerPrefix(pm.getPrefix(), pm.getURI());
 		}
 
 		if (datatype != null) {
@@ -445,7 +462,7 @@ public class RDFaParser implements ContentHandler {
 				// obtained according to the section on URI
 				// and CURIE Processing, each of which is used
 				// to generate a triple
-				Component typeURI = context.getQualifiedNameCU(type);
+				Component typeURI = context.getQualifiedNameTCU(type);
 				if (typeURI != null) {
 					typeURI.setLocation(line, column);
 					tripleSink.generateTriple(context.getNewSubject(),
