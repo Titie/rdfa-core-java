@@ -54,6 +54,12 @@ public class SimpleProfileLoader implements ProfileLoader {
 		return profile;
 	}
 
+	/**
+	 * Profile implementation for SimpleProfileLoader
+	 * 
+	 * @author ssakorho
+	 *
+	 */
 	private class SimpleProfile implements Profile {
 		private String defaultVocabulary;
 		private Map<String, String> termMappings;
@@ -94,6 +100,12 @@ public class SimpleProfileLoader implements ProfileLoader {
 		}
 	}
 
+	/**
+	 * TripleSink implementation for SimpleProfileLoader
+	 * 
+	 * @author ssakorho
+	 *
+	 */
 	private class ProfileTripleSink implements TripleSink {
 		private final static String RDFA_NS = "http://www.w3.org/ns/rdfa#";
 		private String defaultVocabulary = null;
@@ -142,11 +154,17 @@ public class SimpleProfileLoader implements ProfileLoader {
 			return prefixMappings;
 		}
 
+		/* (non-Javadoc)
+		 * @see fi.tikesos.rdfa.core.triple.TripleSink#generateTriple(fi.tikesos.rdfa.core.datatype.Component, fi.tikesos.rdfa.core.datatype.Component, fi.tikesos.rdfa.core.datatype.Component)
+		 */
 		public void generateTriple(Component subject, Component predicate,
 				Component object) {
 			// Ignored
 		}
 
+		/* (non-Javadoc)
+		 * @see fi.tikesos.rdfa.core.triple.TripleSink#generateTripleLiteral(fi.tikesos.rdfa.core.datatype.Component, fi.tikesos.rdfa.core.datatype.Component, fi.tikesos.rdfa.core.datatype.Lexical, fi.tikesos.rdfa.core.datatype.Language, fi.tikesos.rdfa.core.datatype.Component)
+		 */
 		public void generateTripleLiteral(Component subject,
 				Component predicate, Lexical lexical, Language language,
 				Component datatype) {

@@ -50,7 +50,7 @@ public class RDFaParserTest {
 				"0188", "0189", "0190", "0193", "0195", "0196", "0197", "0198",
 				"0200", "0204", "0205", "0206", "0207", "0208", "0209", "0210",
 				"0211", "0212", "0213" };
-		String[] inverse = { "0042", "0107", "0122", "0140" };
+		String[] inverse = { "0042", "0107", "0122", "0140", "0189" };
 
 		// Register parser
 		RDFReaderFImpl.setBaseReaderClassName("RDFA-CORE",
@@ -63,7 +63,7 @@ public class RDFaParserTest {
 
 			for (String currentTest : tests) {
 //				if (currentTest.compareTo("0186") == 0) break;
-//				if (currentTest.compareTo("0193") != 0) continue;
+//				if (currentTest.compareTo("0189") != 0) continue;
 				InputStream inputXML = this.getClass().getResourceAsStream(
 						"/tests/xhtml/" + currentTest + ".xhtml");
 				if (inputXML == null) continue;

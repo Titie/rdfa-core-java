@@ -21,6 +21,7 @@ public class BaseURI {
 	public BaseURI(String uri) throws URISyntaxException {
 		value = new URI(uri);
 	}
+	
 	/**
 	 * @param uri
 	 * @throws URISyntaxException 
@@ -33,6 +34,7 @@ public class BaseURI {
 		}
 		value = new URI(uri);
 	}
+	
 	/**
 	 * @return
 	 */
