@@ -34,7 +34,6 @@ import fi.tikesos.rdfa.core.literal.LiteralCollector;
 public class RDFaParser implements ContentHandler {
 	public static final int XHTML_RDFA = 0;
 	public static final int XML_RDFA = 1;
-	private static final String DEFAULT_VOCABULARY = "http://www.w3.org/1999/xhtml/vocab#";
 	private static final String XHTML_PROFILE = "http://www.w3.org/1999/xhtml/vocab";
 	private static final String XHTML_NS = "http://www.w3.org/1999/xhtml";
 	private static final String XML_NS = "http://www.w3.org/XML/1998/namespace";
@@ -63,7 +62,6 @@ public class RDFaParser implements ContentHandler {
 			ProfileLoader profileLoader, int format) throws URISyntaxException {
 		// Create default evaluation context
 		this.context = new ProcessingContext(base);
-		this.context.setVocabulary(DEFAULT_VOCABULARY);
 		this.context.setNewSubject(new Component(base));
 		this.profileLoader = profileLoader;
 		this.tripleSink = tripleSink;
@@ -129,11 +127,10 @@ public class RDFaParser implements ContentHandler {
 	public void endPrefixMapping(String prefix) throws SAXException {
 		// End prefix-mapping
 	}
-	
+
 	public void processProfile(Profile profile) {
 		// Prefix mappings
-		for (Entry<String, String> p : profile.getPrefixMappings()
-				.entrySet()) {
+		for (Entry<String, String> p : profile.getPrefixMappings().entrySet()) {
 			context.registerPrefix(p.getKey(), p.getValue());
 		}
 		// Term mappings
@@ -146,7 +143,7 @@ public class RDFaParser implements ContentHandler {
 		// Default vocabulary
 		if (profile.getDefaultVocabulary() != null) {
 			context.setVocabulary(profile.getDefaultVocabulary());
-		}		
+		}
 	}
 
 	/**
@@ -164,6 +161,7 @@ public class RDFaParser implements ContentHandler {
 		String resource = null;
 		String src = null;
 		String href = null;
+		String vocab = null;
 		String datatype = null;
 		String[] typeof = null;
 		String[] profile = null;
@@ -187,11 +185,7 @@ public class RDFaParser implements ContentHandler {
 			if ("vocab".equals(attributeQName) == true) {
 				// 2.
 				// @vocab
-				if (atts.getValue(i).isEmpty() == true) {
-					context.setVocabulary(DEFAULT_VOCABULARY);
-				} else {
-					context.setVocabulary(atts.getValue(i));
-				}
+				vocab = atts.getValue(i);
 			} else if ("profile".equals(attributeQName) == true) {
 				// @profile
 				profile = atts.getValue(i).trim().split("\\s");
@@ -250,15 +244,18 @@ public class RDFaParser implements ContentHandler {
 				lookForBase = true;
 			}
 		}
-		
+
 		if (lookForBase == true) {
 			// If looking for base
 			if (format == XHTML_RDFA) {
 				// From XHTML
-				if (depth == 2 && ("head".equals(localName) == false || XHTML_NS.equals(uri) == false)) {
+				if (depth == 2
+						&& ("head".equals(localName) == false || XHTML_NS
+								.equals(uri) == false)) {
 					// Stop looking for base
 					lookForBase = false;
-				} else if (depth == 3 && "base".equals(localName) == true && XHTML_NS.equals(uri) == true) {
+				} else if (depth == 3 && "base".equals(localName) == true
+						&& XHTML_NS.equals(uri) == true) {
 					if (href != null) {
 						// Set base to @href
 						context.setBase(href);
@@ -266,7 +263,7 @@ public class RDFaParser implements ContentHandler {
 				}
 			}
 		}
-		
+
 		if (depth == 1 && format == XHTML_RDFA) {
 			// Default vocabulary for XHTML
 			if (profileLoader != null) {
@@ -279,7 +276,7 @@ public class RDFaParser implements ContentHandler {
 				}
 			}
 		}
-		
+
 		if (profileLoader != null && profile != null) {
 			// Load profiles
 			for (String profileURI : profile) {
@@ -292,7 +289,12 @@ public class RDFaParser implements ContentHandler {
 				}
 			}
 		}
-		
+
+		// Set vocabulary
+		if (vocab != null) {
+			context.setVocabulary(vocab.isEmpty() == true ? null : vocab);
+		}
+
 		// Register namespace mappings defined at @xmlns:*
 		for (PrefixMapping pm : xmlnsList) {
 			context.registerPrefix(pm.getPrefix(), pm.getURI());
@@ -350,8 +352,8 @@ public class RDFaParser implements ContentHandler {
 				// element. If it is, then act as if there is an empty
 				// @about present, and process it according to the rule
 				// for @about.
-				if (("head".equals(localName) == true || "body".equals(localName)) &&
-						XHTML_NS.equals(uri) == true) {
+				if (("head".equals(localName) == true || "body"
+						.equals(localName)) && XHTML_NS.equals(uri) == true) {
 					Component aboutURI = context.getQualifiedNameCU("");
 					if (aboutURI != null) {
 						aboutURI.setLocation(line, column);
@@ -359,7 +361,7 @@ public class RDFaParser implements ContentHandler {
 					}
 				}
 			}
-			
+
 			if (context.getNewSubject() == null) {
 				// If no URI is provided by a resource attribute, then the first
 				// match from the following rules will apply
@@ -407,8 +409,8 @@ public class RDFaParser implements ContentHandler {
 				// element. If it is, then act as if there is an empty
 				// @about present, and process it according to the rule
 				// for @about.
-				if (("head".equals(localName) == true || "body".equals(localName)) &&
-						XHTML_NS.equals(uri) == true) {
+				if (("head".equals(localName) == true || "body"
+						.equals(localName)) && XHTML_NS.equals(uri) == true) {
 					Component aboutURI = context.getQualifiedNameCU("");
 					if (aboutURI != null) {
 						aboutURI.setLocation(line, column);
@@ -416,7 +418,7 @@ public class RDFaParser implements ContentHandler {
 					}
 				}
 			}
-			
+
 			if (context.getNewSubject() == null) {
 				// If no URI is provided then the first match from the following
 				// rules will apply:

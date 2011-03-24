@@ -36,8 +36,8 @@ public class ProcessingContext {
 	private long beginTagEndColumn = 0;
 	// Shared between Local Context and Evaluation Context
 	private List<IncompleteTriple> incompleteTriples = null;
-	private Registry prefixMappings;
-	private Registry termMappings;
+	private Registry prefixMappings = null;
+	private Registry termMappings = null;
 	private String language = null;
 	private String vocabulary = null;
 	private BaseURI base = null;
@@ -68,8 +68,6 @@ public class ProcessingContext {
 	public ProcessingContext(ProcessingContext localContext,
 			long beginTagStartLine, long beginTagStartColumn,
 			long beginTagEndLine, long beginTagEndColumn) {
-		this.parentContext = localContext;
-		this.blankNodeHandler = localContext.getBlankNodeHandler();
 		if (localContext.isSkipElement() == true) {
 			// If the skip element flag is 'true' then the new evaluation
 			// context is a copy of the current context that was passed in
@@ -77,10 +75,11 @@ public class ProcessingContext {
 			// URI mappings values replaced with the local values
 			this.parentSubject = localContext.getParentSubject();
 			this.parentObject = localContext.getParentObject();
+			// !! Is this really intended? !!
 			this.vocabulary = localContext.getParentContext().getVocabulary();
+			// this.termMappings = localContext.getParentContext()
+			// .getTermMappings();
 			this.base = localContext.getParentContext().getBase();
-			this.termMappings = localContext.getParentContext()
-					.getTermMappings();
 		} else {
 			// Otherwise, the values are:
 			// * the base is set to the base value of the current
@@ -113,10 +112,14 @@ public class ProcessingContext {
 			} else {
 				this.parentObject = localContext.getParentSubject();
 			}
-			this.termMappings = localContext.getTermMappings();
+			// !! Is this really intended? !!
 			this.vocabulary = localContext.getVocabulary();
+			// this.termMappings = localContext.getTermMappings();
 			this.base = localContext.getBase();
 		}
+		this.termMappings = localContext.getTermMappings();
+		this.parentContext = localContext;
+		this.blankNodeHandler = localContext.getBlankNodeHandler();
 		this.beginTagStartLine = beginTagStartLine;
 		this.beginTagStartColumn = beginTagStartColumn;
 		this.beginTagEndLine = beginTagEndLine;
@@ -382,9 +385,19 @@ public class ProcessingContext {
 	 * @param URI
 	 */
 	public void registerTerm(String Term, String URI) {
-		if (parentContext != null && termMappings == parentContext.termMappings) {
+		if (parentContext != null
+				&& parentContext.getTermMappings() == termMappings) {
 			termMappings = new Registry(termMappings);
 		}
+		/*
+		 * if (parentContext != null) { // Terms are not passed, when
+		 * skipElement is true?! if (parentContext.isSkipElement() == false && parentContext.getTermMappings() == termMappings ||
+		 * parentContext.isSkipElement() == true &&
+		 * parentContext.getParentContext().getTermMappings() == termMappings) {
+		 * termMappings = new Registry(termMappings); }
+		 * 
+		 * }
+		 */
 		termMappings.set(Term, URI);
 	}
 
@@ -516,20 +529,27 @@ public class ProcessingContext {
 					uri = new Component(
 							blankNodeHandler.mapBlankNode(CURIEorURI));
 				} else {
-					uri = new Component(CURIEorURI);
+					try {
+						URI u = new URI(CURIEorURI);
+						if (u.isAbsolute() == true) {
+							uri = new Component(CURIEorURI);
+						}
+					} catch (Exception exception) {
+						// Input URI violates RFC 2396
+					}
 				}
 			}
 			break;
 		case 0:
 			// Default prefix
-			if (getVocabulary() != null) {
-				String term = CURIEorURI.substring(1);
-				if (term.isEmpty() == true || XMLChar.isValidNCName(term) == true) {
-					uri = new Component(getVocabulary() + term);
-				}
+			String term = CURIEorURI.substring(1);
+			if (term.isEmpty() == true || XMLChar.isValidNCName(term) == true) {
+				uri = new Component("http://www.w3.org/1999/xhtml/vocab#"
+						+ term);
 			}
 			break;
 		case -1:
+			// No prefix
 			uri = getQualifiedNameU(CURIEorURI);
 			break;
 		}
@@ -576,26 +596,23 @@ public class ProcessingContext {
 			}
 			break;
 		case 0:
-			if (getVocabulary() != null) {
-				// Default prefix
-				String term = TERMorCURIEorAbsURI.substring(1);
-				if (term.isEmpty() == true || XMLChar.isValidNCName(term) == true) {
-					uri = new Component(getVocabulary() + term);
-				}
+			// Default prefix
+			String term = TERMorCURIEorAbsURI.substring(1);
+			if (term.isEmpty() == true || XMLChar.isValidNCName(term) == true) {
+				uri = new Component("http://www.w3.org/1999/xhtml/vocab#"
+						+ term);
 			}
 			break;
 		case -1:
-			// No colon - TERM or EMPTY
-			if (TERMorCURIEorAbsURI.isEmpty() == true) {
-				uri = new Component("");
-			} else {
+			// Term or no prefix
+			if (TERMorCURIEorAbsURI.isEmpty() == false) {
 				// Try to resolve as a term
 				String termURI = resolveTerm(TERMorCURIEorAbsURI);
 				if (termURI != null) {
-					// Term uri
+					// Term URI
 					uri = new Component(termURI);
 				} else if (XMLChar.isValidNCName(TERMorCURIEorAbsURI) == true) {
-					// Default prefix (if any)
+					// No prefix (if any)
 					if (getVocabulary() != null) {
 						uri = new Component(getVocabulary()
 								+ TERMorCURIEorAbsURI);

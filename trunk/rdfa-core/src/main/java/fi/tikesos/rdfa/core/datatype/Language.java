@@ -16,15 +16,19 @@ public class Language implements Location {
 		this.line = line;
 		this.column = column;
 	}
+	
 	public String getValue() {
 		return value;
 	}
+	
 	public long getLine() {
 		return line;
 	}
+	
 	public long getColumn() {
 		return column;
 	}
+	
 	public void setLocation(long line, long column) {
 		this.line = line;
 		this.column = column;

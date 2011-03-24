@@ -8,7 +8,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 /**
- * Null EntityResolver implementation
+ * NullEntityResolver implementation
  * 
  * @author ssakorho
  *
