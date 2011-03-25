@@ -78,10 +78,12 @@ public class RDFaParserTest {
 				Assert.assertNotNull(rdfReader);
 
 				// Read RDFa
+				long readStart = System.currentTimeMillis();
 				rdfReader.read(testModel, inputXML,
 						"http://rdfa.digitalbazaar.com/test-suite/test-cases/xhtml1/rdfa1.1/"
 								+ currentTest + ".xhtml");
-
+				long readEnd = System.currentTimeMillis();
+				
 				// Create Query
 				Query query = QueryFactory.create(consumeStream(inputSPARQL));
 				Assert.assertNotNull(query);
@@ -97,7 +99,7 @@ public class RDFaParserTest {
 				// Compare result
 				boolean fail = Arrays.binarySearch(inverse, currentTest) >= 0 ? true : false;
 				System.out.println("Test: " + currentTest + " "
-						+ (queryResult != fail ? "[SUCCESS]" : "[FAIL!]"));
+						+ (queryResult != fail ? "[SUCCESS]" : "[FAIL!]") + " " + (readEnd - readStart) + "ms");
 			}
 		} catch (Exception e) {
 			// Exception
