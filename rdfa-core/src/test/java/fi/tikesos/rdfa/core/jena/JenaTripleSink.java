@@ -28,7 +28,19 @@ public class JenaTripleSink implements TripleSink {
 		this.model = model;
 		this.nodeMap = new HashMap<String, Resource>();
 	}
+	
+	/* (non-Javadoc)
+	 * @see fi.tikesos.rdfa.core.triple.TripleSink#startRelativeTripleCaching()
+	 */
+	public void startRelativeTripleCaching() {
+	}
 
+	/* (non-Javadoc)
+	 * @see fi.tikesos.rdfa.core.triple.TripleSink#stopRelativeTripleCaching()
+	 */
+	public void stopRelativeTripleCaching() {
+	}
+	
 	/* (non-Javadoc)
 	 * @see fi.tikesos.rdfa.TripleSink#generateTriple(fi.tikesos.rdfa.Component, fi.tikesos.rdfa.Component, fi.tikesos.rdfa.Component)
 	 */

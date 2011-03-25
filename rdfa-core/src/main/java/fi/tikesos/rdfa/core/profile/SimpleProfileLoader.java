@@ -155,6 +155,18 @@ public class SimpleProfileLoader implements ProfileLoader {
 		}
 
 		/* (non-Javadoc)
+		 * @see fi.tikesos.rdfa.core.triple.TripleSink#startRelativeTripleCaching()
+		 */
+		public void startRelativeTripleCaching() {
+		}
+
+		/* (non-Javadoc)
+		 * @see fi.tikesos.rdfa.core.triple.TripleSink#stopRelativeTripleCaching()
+		 */
+		public void stopRelativeTripleCaching() {
+		}
+		
+		/* (non-Javadoc)
 		 * @see fi.tikesos.rdfa.core.triple.TripleSink#generateTriple(fi.tikesos.rdfa.core.datatype.Component, fi.tikesos.rdfa.core.datatype.Component, fi.tikesos.rdfa.core.datatype.Component)
 		 */
 		public void generateTriple(Component subject, Component predicate,
