@@ -32,8 +32,9 @@ import fi.tikesos.rdfa.core.literal.LiteralCollector;
  * @version 0.1
  */
 public class RDFaParser implements ContentHandler {
-	public static final int XHTML_RDFA = 0;
-	public static final int XML_RDFA = 1;
+	public static final int DYNAMIC = 0;
+	public static final int XHTML_RDFA = 1;
+	public static final int XML_RDFA = 2;
 	private static final String XHTML_PROFILE = "http://www.w3.org/1999/xhtml/vocab";
 	private static final String XHTML_NS = "http://www.w3.org/1999/xhtml";
 	private static final String XML_NS = "http://www.w3.org/XML/1998/namespace";
@@ -239,41 +240,49 @@ public class RDFaParser implements ContentHandler {
 				// @datatype
 				datatype = atts.getValue(i);
 			} else if (depth == 1 && "xmlns".equals(attributeQName) == true
-					&& XHTML_NS.equals(atts.getValue(i)) == true) {
-				format = XHTML_RDFA;
-				lookForBase = true;
+					&& format == DYNAMIC) {
+				if (XHTML_NS.equals(atts.getValue(i)) == true) {
+					// XHTML+RDFa extension
+					format = XHTML_RDFA;
+					lookForBase = true;
+				} else {
+					// XML-RDFa core
+					format = XML_RDFA;
+					lookForBase = false;
+				}
 			}
 		}
 
-		if (lookForBase == true) {
-			// If looking for base
-			if (format == XHTML_RDFA) {
-				// From XHTML
-				if (depth == 2
-						&& ("head".equals(localName) == false || XHTML_NS
-								.equals(uri) == false)) {
-					// Stop looking for base
-					lookForBase = false;
-				} else if (depth == 3 && "base".equals(localName) == true
-						&& XHTML_NS.equals(uri) == true) {
-					if (href != null) {
-						// Set base to @href
-						context.setBase(href);
+		if (format == XHTML_RDFA) {
+			// From XHTML
+			switch (depth) {
+			case 1:
+				// Default vocabulary for XHTML
+				if (profileLoader != null) {
+					Profile pro = profileLoader.loadProfile(XHTML_PROFILE);
+					if (pro != null) {
+						processProfile(pro);
+					} else {
+						// Failed profile causes all subsequent elements
+						// to be ignored!
 					}
 				}
-			}
-		}
-
-		if (depth == 1 && format == XHTML_RDFA) {
-			// Default vocabulary for XHTML
-			if (profileLoader != null) {
-				Profile pro = profileLoader.loadProfile(XHTML_PROFILE);
-				if (pro != null) {
-					processProfile(pro);
-				} else {
-					// Failed profile causes all subsequent elements
-					// to be ignored!
+				break;
+			case 2:
+				if ("head".equals(localName) == true
+						&& XHTML_NS.equals(uri) == true) {
+					// Start looking for base
+					lookForBase = true;
+					tripleSink.startRelativeTripleCaching();
 				}
+				break;
+			case 3:
+				if (lookForBase == true && "base".equals(localName) == true
+						&& XHTML_NS.equals(uri) == true) {
+					// Set base to @href
+					context.setBase(href);
+				}
+				break;
 			}
 		}
 
@@ -671,6 +680,17 @@ public class RDFaParser implements ContentHandler {
 								context.getParentSubject());
 					}
 				}
+			}
+		}
+
+		if (format == XHTML_RDFA) {
+			// From XHTML
+			if (lookForBase == true && depth == 2
+					&& "head".equals(localName) == true
+					&& XHTML_NS.equals(uri) == true) {
+				// Start looking for base
+				lookForBase = false;
+				tripleSink.stopRelativeTripleCaching();
 			}
 		}
 

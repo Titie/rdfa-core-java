@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: fi.tikesos.rdfa.core.RDFaParserTest
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.852 sec
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.711 sec
