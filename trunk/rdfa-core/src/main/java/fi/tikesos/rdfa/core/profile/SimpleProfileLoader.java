@@ -25,31 +25,26 @@ import fi.tikesos.rdfa.core.util.NullEntityResolver;
 public class SimpleProfileLoader implements ProfileLoader {
 	private Map<String, Profile> profileCache = new HashMap<String, Profile>();
 	
-	public Profile loadProfile(String profileURI) {
+	public Profile loadProfile(String profileURI) throws Exception {
 		Profile profile = profileCache.get(profileURI);
 		if (profile == null) {
-			try {
-				XMLReader reader = XMLReaderFactory.createXMLReader();
-				ProfileTripleSink profileTripleSink = new ProfileTripleSink();
-				RDFaParser parser = new RDFaParser(profileURI, profileTripleSink,
-						null, RDFaParser.XML_RDFA);
-	
-				reader.setFeature("http://xml.org/sax/features/validation",
-						Boolean.FALSE);
-				reader.setContentHandler(parser);
-				reader.setEntityResolver(new NullEntityResolver());
-				reader.parse(new InputSource(new URI(profileURI).toURL()
-						.openStream()));
-	
-				profile = new SimpleProfile(profileTripleSink.getTermMappings(),
-						profileTripleSink.getPrefixMappings(),
-						profileTripleSink.getDefaultVocabulary());
-			} catch (Exception exception) {
-				// TODO: log exception?
-			} finally {
-				// Cache profile
-				profileCache.put(profileURI, profile);
-			}
+			XMLReader reader = XMLReaderFactory.createXMLReader();
+			ProfileTripleSink profileTripleSink = new ProfileTripleSink();
+			RDFaParser parser = new RDFaParser(profileURI, profileTripleSink,
+					null, RDFaParser.XML_RDFA);
+
+			reader.setFeature("http://xml.org/sax/features/validation",
+					Boolean.FALSE);
+			reader.setContentHandler(parser);
+			reader.setEntityResolver(new NullEntityResolver());
+			reader.parse(new InputSource(new URI(profileURI).toURL()
+					.openStream()));
+
+			profile = new SimpleProfile(profileTripleSink.getTermMappings(),
+					profileTripleSink.getPrefixMappings(),
+					profileTripleSink.getDefaultVocabulary());
+			// Cache profile
+			profileCache.put(profileURI, profile);
 		}
 		return profile;
 	}
