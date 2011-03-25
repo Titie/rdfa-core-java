@@ -45,16 +45,6 @@ public class Component implements Location {
 	/**
 	 * Class constructor.
 	 * 
-	 * @param uri
-	 *            the uri
-	 */
-	public Component(URI uri) {
-		this.absoluteURI = uri.toString();
-	}
-
-	/**
-	 * Class constructor.
-	 * 
 	 * @param baseURI
 	 *            the base uri
 	 */
@@ -71,8 +61,12 @@ public class Component implements Location {
 	 *            the uri
 	 */
 	public Component(BaseURI baseURI, URI uri) {
-		this.baseURI = baseURI;
-		this.uri = uri;
+		if (uri.isAbsolute() == true) {
+			this.absoluteURI = uri.toString();
+		} else {
+			this.baseURI = baseURI;
+			this.uri = uri;
+		}
 	}
 
 	/**

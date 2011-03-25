@@ -259,12 +259,12 @@ public class RDFaParser implements ContentHandler {
 			case 1:
 				// Default vocabulary for XHTML
 				if (profileLoader != null) {
-					Profile pro = profileLoader.loadProfile(XHTML_PROFILE);
-					if (pro != null) {
-						processProfile(pro);
-					} else {
+					try {
+						processProfile(profileLoader.loadProfile(XHTML_PROFILE));
+					} catch (Exception exception) {
 						// Failed profile causes all subsequent elements
 						// to be ignored!
+						context.setProfileFailed(true);
 					}
 				}
 				break;
@@ -288,293 +288,311 @@ public class RDFaParser implements ContentHandler {
 
 		if (profileLoader != null && profile != null) {
 			// Load profiles
-			for (String profileURI : profile) {
-				Profile pro = profileLoader.loadProfile(profileURI);
-				if (pro != null) {
-					processProfile(pro);
-				} else {
-					// Failed profile causes all subsequent elements
-					// to be ignored!
+			try {
+				for (String profileURI : profile) {
+					processProfile(profileLoader.loadProfile(profileURI));
 				}
+			} catch (Exception exception) {
+				// Failed profile causes all subsequent elements
+				// to be ignored!
+				context.setProfileFailed(true);
 			}
 		}
-
-		// Set vocabulary
-		if (vocab != null) {
-			context.setVocabulary(vocab.isEmpty() == true ? null : vocab);
-		}
-
-		// Register namespace mappings defined at @xmlns:*
-		for (PrefixMapping pm : xmlnsList) {
-			context.registerPrefix(pm.getPrefix(), pm.getURI());
-		}
-
-		// Register namespace mappings defined at @prefix
-		for (PrefixMapping pm : prefixList) {
-			context.registerPrefix(pm.getPrefix(), pm.getURI());
-		}
-
-		if (datatype != null) {
-			Component datatypeURI = context.getQualifiedNameTCU(datatype);
-			if (datatypeURI != null) {
-				datatypeURI.setLocation(line, column);
-				context.setDatatype(datatypeURI);
+		
+		// Failed profile causes all subsequent elements
+		// to be ignored!
+		if (context.isProfileFailed() == false) {
+			// Set vocabulary
+			if (vocab != null) {
+				context.setVocabulary(vocab.isEmpty() == true ? null : vocab);
 			}
-		}
-
-		if (rev == null && rel == null) {
-			// 6.
-			// If the current element contains no @rel or @rev attribute, then
-			// the next step is to establish a value for new subject. Any of
-			// the attributes that can carry a resource can set new subject
-			if (about != null) {
-				// by using the URI from @about, if present
-				Component aboutURI = context.getQualifiedNameCU(about);
-				if (aboutURI != null) {
-					aboutURI.setLocation(line, column);
-					context.setNewSubject(aboutURI);
+	
+			// Register namespace mappings defined at @xmlns:*
+			for (PrefixMapping pm : xmlnsList) {
+				context.registerPrefix(pm.getPrefix(), pm.getURI());
+			}
+	
+			// Register namespace mappings defined at @prefix
+			for (PrefixMapping pm : prefixList) {
+				context.registerPrefix(pm.getPrefix(), pm.getURI());
+			}
+	
+			if (datatype != null) {
+				try {
+					Component datatypeURI = context.getQualifiedNameTCU(datatype);
+					datatypeURI.setLocation(line, column);
+					context.setDatatype(datatypeURI);
+				} catch (URISyntaxException exception) {
+					// TODO Auto-generated catch block
+					exception.printStackTrace();
 				}
-			} else if (src != null) {
-				// otherwise, by using the URI from @src, if present
-				Component srcURI = context.getQualifiedNameU(src);
-				if (srcURI != null) {
-					srcURI.setLocation(line, column);
-					context.setNewSubject(srcURI);
-				}
-			} else if (resource != null) {
-				// otherwise, by using the URI from @resource, if present
-				Component resourceURI = context.getQualifiedNameCU(resource);
-				if (resourceURI != null) {
-					resourceURI.setLocation(line, column);
-					context.setNewSubject(resourceURI);
-				}
-			} else if (href != null) {
-				// otherwise, by using the URI from @href, if present
-				Component hrefURI = context.getQualifiedNameU(href);
-				if (hrefURI != null) {
-					hrefURI.setLocation(line, column);
-					context.setNewSubject(hrefURI);
-				}
-			} else if (depth == 2 && format == XHTML_RDFA) {
-				// if no URI is provided by a resource attribute, then
-				// first check to see if the element is the head or body
-				// element. If it is, then act as if there is an empty
-				// @about present, and process it according to the rule
-				// for @about.
-				if (("head".equals(localName) == true || "body"
-						.equals(localName)) && XHTML_NS.equals(uri) == true) {
-					Component aboutURI = context.getQualifiedNameCU("");
-					if (aboutURI != null) {
+			}
+	
+			if (rev == null && rel == null) {
+				// 6.
+				// If the current element contains no @rel or @rev attribute, then
+				// the next step is to establish a value for new subject. Any of
+				// the attributes that can carry a resource can set new subject
+				try {
+					if (about != null) {
+						// by using the URI from @about, if present
+						Component aboutURI = context.getQualifiedNameCU(about);
 						aboutURI.setLocation(line, column);
 						context.setNewSubject(aboutURI);
+					} else if (src != null) {
+						// otherwise, by using the URI from @src, if present
+						Component srcURI = context.getQualifiedNameU(src);
+						srcURI.setLocation(line, column);
+						context.setNewSubject(srcURI);
+					} else if (resource != null) {
+						// otherwise, by using the URI from @resource, if present
+						Component resourceURI = context.getQualifiedNameCU(resource);
+						resourceURI.setLocation(line, column);
+						context.setNewSubject(resourceURI);
+					} else if (href != null) {
+						// otherwise, by using the URI from @href, if present
+						Component hrefURI = context.getQualifiedNameU(href);
+						hrefURI.setLocation(line, column);
+						context.setNewSubject(hrefURI);
+					} else if (depth == 2 && format == XHTML_RDFA) {
+						// if no URI is provided by a resource attribute, then
+						// first check to see if the element is the head or body
+						// element. If it is, then act as if there is an empty
+						// @about present, and process it according to the rule
+						// for @about.
+						if (("head".equals(localName) == true || "body"
+								.equals(localName)) && XHTML_NS.equals(uri) == true) {
+							Component aboutURI = context.getQualifiedNameCU("");
+							aboutURI.setLocation(line, column);
+							context.setNewSubject(aboutURI);
+						}
 					}
+				} catch (URISyntaxException exception) {
+					// TODO Auto-generated catch block
+					exception.printStackTrace();
 				}
-			}
-
-			if (context.getNewSubject() == null) {
-				// If no URI is provided by a resource attribute, then the first
-				// match from the following rules will apply
-				if (typeof != null) {
-					// if @typeof is present, then new subject is set to be a
-					// newly created bnode
-					context.setNewSubject(new Component(context
-							.generateBlankNode(), line, column));
-				} else {
-					// otherwise, if parent object is present, new subject is
-					// set to the value of parent object
-					if (context.getParentObject() != null) {
-						context.setNewSubject(context.getParentObject());
-
-						if (context.getProperty() == null) {
-							// Additionally, if @property is not present then
-							// the skip element flag is set to 'true';
-							context.setSkipElement(true);
+				
+				if (context.getNewSubject() == null) {
+					// If no URI is provided by a resource attribute, then the first
+					// match from the following rules will apply
+					if (typeof != null) {
+						// if @typeof is present, then new subject is set to be a
+						// newly created bnode
+						context.setNewSubject(new Component(context
+								.generateBlankNode(), line, column));
+					} else {
+						// otherwise, if parent object is present, new subject is
+						// set to the value of parent object
+						if (context.getParentObject() != null) {
+							context.setNewSubject(context.getParentObject());
+	
+							if (context.getProperty() == null) {
+								// Additionally, if @property is not present then
+								// the skip element flag is set to 'true';
+								context.setSkipElement(true);
+							}
 						}
 					}
 				}
-			}
-		} else {
-			// 7.
-			// If the current element does contain a @rel or @rev attribute,
-			// then the next step is to establish both a value for new subject
-			// and a value for current object resource:
-			if (about != null) {
-				// by using the URI from @about, if present
-				Component aboutURI = context.getQualifiedNameCU(about);
-				if (aboutURI != null) {
-					aboutURI.setLocation(line, column);
-					context.setNewSubject(aboutURI);
-				}
-			} else if (src != null) {
-				// otherwise, by using the URI from @src, if present
-				Component srcURI = context.getQualifiedNameU(src);
-				if (srcURI != null) {
-					srcURI.setLocation(line, column);
-					context.setNewSubject(srcURI);
-				}
-			} else if (depth == 2 && format == XHTML_RDFA) {
-				// if no URI is provided by a resource attribute, then
-				// first check to see if the element is the head or body
-				// element. If it is, then act as if there is an empty
-				// @about present, and process it according to the rule
-				// for @about.
-				if (("head".equals(localName) == true || "body"
-						.equals(localName)) && XHTML_NS.equals(uri) == true) {
-					Component aboutURI = context.getQualifiedNameCU("");
-					if (aboutURI != null) {
+			} else {
+				// 7.
+				// If the current element does contain a @rel or @rev attribute,
+				// then the next step is to establish both a value for new subject
+				// and a value for current object resource:
+				try {
+					if (about != null) {
+						// by using the URI from @about, if present
+						Component aboutURI = context.getQualifiedNameCU(about);
 						aboutURI.setLocation(line, column);
 						context.setNewSubject(aboutURI);
+					} else if (src != null) {
+						// otherwise, by using the URI from @src, if present
+						Component srcURI = context.getQualifiedNameU(src);
+						srcURI.setLocation(line, column);
+						context.setNewSubject(srcURI);
+					} else if (depth == 2 && format == XHTML_RDFA) {
+						// if no URI is provided by a resource attribute, then
+						// first check to see if the element is the head or body
+						// element. If it is, then act as if there is an empty
+						// @about present, and process it according to the rule
+						// for @about.
+						if (("head".equals(localName) == true || "body"
+								.equals(localName)) && XHTML_NS.equals(uri) == true) {
+							Component aboutURI = context.getQualifiedNameCU("");
+							aboutURI.setLocation(line, column);
+							context.setNewSubject(aboutURI);
+						}
+					}
+				} catch (URISyntaxException exception) {
+					// TODO Auto-generated catch block
+					exception.printStackTrace();
+				}
+				
+	
+				if (context.getNewSubject() == null) {
+					// If no URI is provided then the first match from the following
+					// rules will apply:
+					if (typeof != null) {
+						// if @typeof is present, then new subject is set to be a
+						// newly created bnode;
+						context.setNewSubject(new Component(context
+								.generateBlankNode(), line, column));
+					} else if (context.getParentObject() != null) {
+						// otherwise, if parent object is present, new subject is
+						// set to that
+						context.setNewSubject(context.getParentObject());
 					}
 				}
-			}
-
-			if (context.getNewSubject() == null) {
-				// If no URI is provided then the first match from the following
-				// rules will apply:
-				if (typeof != null) {
-					// if @typeof is present, then new subject is set to be a
-					// newly created bnode;
-					context.setNewSubject(new Component(context
-							.generateBlankNode(), line, column));
-				} else if (context.getParentObject() != null) {
-					// otherwise, if parent object is present, new subject is
-					// set to that
-					context.setNewSubject(context.getParentObject());
+				// Then the current object resource is set to the URI obtained from
+				// the first match from the following rules
+				try {
+					if (resource != null) {
+						// by using the URI from @resource, if present
+						Component resourceURI = context.getQualifiedNameCU(resource);
+						resourceURI.setLocation(line, column);
+						context.setCurrentObjectResource(resourceURI);
+					} else if (href != null) {
+						// otherwise, by using the URI from @href, if present
+						Component hrefURI = context.getQualifiedNameU(href);
+						hrefURI.setLocation(line, column);
+						context.setCurrentObjectResource(hrefURI);
+					}
+				} catch (URISyntaxException exception) {
+					// TODO Auto-generated catch block
+					exception.printStackTrace();
 				}
 			}
-			// Then the current object resource is set to the URI obtained from
-			// the first match from the following rules
-			if (resource != null) {
-				// by using the URI from @resource, if present
-				Component resourceURI = context.getQualifiedNameCU(resource);
-				if (resourceURI != null) {
-					resourceURI.setLocation(line, column);
-					context.setCurrentObjectResource(resourceURI);
-				}
-			} else if (href != null) {
-				// otherwise, by using the URI from @href, if present
-				Component hrefURI = context.getQualifiedNameU(href);
-				if (hrefURI != null) {
-					hrefURI.setLocation(line, column);
-					context.setCurrentObjectResource(hrefURI);
-				}
-			}
-		}
-
-		if (context.getNewSubject() != null && typeof != null) {
-			// 8.
-			// If in any of the previous steps a new subject
-			// was set to a non-null value, it is now used to
-			// provide a subject for type values
-			for (String type : typeof) {
-				// One or more 'types' for the new subject can
-				// be set by using @typeof. If present, the
-				// attribute must contain one or more URIs,
-				// obtained according to the section on URI
-				// and CURIE Processing, each of which is used
-				// to generate a triple
-				Component typeURI = context.getQualifiedNameTCU(type);
-				if (typeURI != null) {
-					typeURI.setLocation(line, column);
-					tripleSink.generateTriple(context.getNewSubject(),
-							new Component(RDF_NS + "type", line, column),
-							typeURI);
-				}
-			}
-		}
-
-		if (context.getCurrentObjectResource() != null) {
-			// 9.
-			// If in any of the previous steps a current object
-			// resource was set to a non-null value, it is now
-			// used to generate triples
-			if (rel != null && rel.length > 0 && rel[0].isEmpty() == false) {
-				// if present, @rel may contain one or more
-				// URIs, obtained according to the section on
-				// CURIE and URI Processing each of which is
-				// used to generate a triple
-				for (String predicate : rel) {
-					Component predicateURI = context
-							.getQualifiedNameTCU(predicate);
-					if (predicateURI != null) {
-						predicateURI.setLocation(line, column);
+	
+			if (context.getNewSubject() != null && typeof != null) {
+				// 8.
+				// If in any of the previous steps a new subject
+				// was set to a non-null value, it is now used to
+				// provide a subject for type values
+				for (String type : typeof) {
+					// One or more 'types' for the new subject can
+					// be set by using @typeof. If present, the
+					// attribute must contain one or more URIs,
+					// obtained according to the section on URI
+					// and CURIE Processing, each of which is used
+					// to generate a triple
+					try {
+						Component typeURI = context.getQualifiedNameTCU(type);
+						typeURI.setLocation(line, column);
 						tripleSink.generateTriple(context.getNewSubject(),
-								predicateURI,
-								context.getCurrentObjectResource());
+								new Component(RDF_NS + "type", line, column),
+								typeURI);
+					} catch (URISyntaxException exception) {
+						// TODO Auto-generated catch block
+						exception.printStackTrace();
 					}
 				}
 			}
-			if (rev != null && rev.length > 0 && rev[0].isEmpty() == false) {
-				// if present, @rev may contain one or more
-				// URIs, obtained according to the section on
-				// CURIE and URI Processing each of which is
-				// used to generate a triple
-				for (String predicate : rev) {
-					Component predicateURI = context
-							.getQualifiedNameTCU(predicate);
-					if (predicateURI != null) {
-						predicateURI.setLocation(line, column);
-						tripleSink.generateTriple(
-								context.getCurrentObjectResource(),
-								predicateURI, context.getNewSubject());
+	
+			if (context.getCurrentObjectResource() != null) {
+				// 9.
+				// If in any of the previous steps a current object
+				// resource was set to a non-null value, it is now
+				// used to generate triples
+				if (rel != null && rel.length > 0 && rel[0].isEmpty() == false) {
+					// if present, @rel may contain one or more
+					// URIs, obtained according to the section on
+					// CURIE and URI Processing each of which is
+					// used to generate a triple
+					for (String predicate : rel) {
+						try {
+							Component predicateURI = context
+									.getQualifiedNameTCU(predicate);
+							predicateURI.setLocation(line, column);
+							tripleSink.generateTriple(context.getNewSubject(),
+									predicateURI,
+									context.getCurrentObjectResource());
+						} catch (URISyntaxException exception) {
+							// TODO Auto-generated catch block
+							exception.printStackTrace();
+						}
 					}
 				}
-			}
-		} else if (rel != null || rev != null) {
-			// 10.
-			// If however current object resource was set to null,
-			// but there are predicates present, then they must
-			// be stored as incomplete triples, pending the
-			// discovery of a subject that can be used as the
-			// object. Also, current object resource should be set
-			// to a newly created bnode
-			List<IncompleteTriple> incompleteTriples = new ArrayList<IncompleteTriple>();
-			if (rel != null && rel.length > 0 && rel[0].isEmpty() == false) {
-				// If present, @rel must contain one or more URIs,
-				// obtained according to the section on CURIE and URI
-				// Processing each of which is added to the localContext list
-				// of incomplete triples
-				for (String predicate : rel) {
-					Component predicateURI = context
-							.getQualifiedNameTCU(predicate);
-					if (predicateURI != null) {
-						predicateURI.setLocation(line, column);
-						incompleteTriples.add(new IncompleteTriple(
-								predicateURI, false));
+				if (rev != null && rev.length > 0 && rev[0].isEmpty() == false) {
+					// if present, @rev may contain one or more
+					// URIs, obtained according to the section on
+					// CURIE and URI Processing each of which is
+					// used to generate a triple
+					for (String predicate : rev) {
+						try {
+							Component predicateURI = context
+									.getQualifiedNameTCU(predicate);
+							predicateURI.setLocation(line, column);
+							tripleSink.generateTriple(
+									context.getCurrentObjectResource(),
+									predicateURI, context.getNewSubject());
+						} catch (URISyntaxException exception) {
+							// TODO Auto-generated catch block
+							exception.printStackTrace();
+						}
 					}
 				}
-			}
-			if (rev != null && rev.length > 0 && rev[0].isEmpty() == false) {
-				// If present, @rel must contain one or more URIs,
-				// obtained according to the section on CURIE and URI
-				// Processing each of which is added to the localContext list
-				// of incomplete triples
-				for (String predicate : rev) {
-					Component predicateURI = context
-							.getQualifiedNameTCU(predicate);
-					if (predicateURI != null) {
-						predicateURI.setLocation(line, column);
-						incompleteTriples.add(new IncompleteTriple(
-								predicateURI, true));
+			} else if (rel != null || rev != null) {
+				// 10.
+				// If however current object resource was set to null,
+				// but there are predicates present, then they must
+				// be stored as incomplete triples, pending the
+				// discovery of a subject that can be used as the
+				// object. Also, current object resource should be set
+				// to a newly created bnode
+				List<IncompleteTriple> incompleteTriples = new ArrayList<IncompleteTriple>();
+				if (rel != null && rel.length > 0 && rel[0].isEmpty() == false) {
+					// If present, @rel must contain one or more URIs,
+					// obtained according to the section on CURIE and URI
+					// Processing each of which is added to the localContext list
+					// of incomplete triples
+					for (String predicate : rel) {
+						try {
+							Component predicateURI = context
+									.getQualifiedNameTCU(predicate);
+							predicateURI.setLocation(line, column);
+							incompleteTriples.add(new IncompleteTriple(
+									predicateURI, false));
+						} catch (URISyntaxException exception) {
+							// TODO Auto-generated catch block
+							exception.printStackTrace();
+						}
 					}
 				}
+				if (rev != null && rev.length > 0 && rev[0].isEmpty() == false) {
+					// If present, @rel must contain one or more URIs,
+					// obtained according to the section on CURIE and URI
+					// Processing each of which is added to the localContext list
+					// of incomplete triples
+					for (String predicate : rev) {
+						try {
+							Component predicateURI = context
+									.getQualifiedNameTCU(predicate);
+							predicateURI.setLocation(line, column);
+							incompleteTriples.add(new IncompleteTriple(
+									predicateURI, true));
+						} catch (URISyntaxException exception) {
+							// TODO Auto-generated catch block
+							exception.printStackTrace();
+						}
+					}
+				}
+				if (incompleteTriples.isEmpty() == false) {
+					context.setLocalIncompleteTriples(incompleteTriples);
+				}
+				context.setCurrentObjectResource(new Component(context
+						.generateBlankNode(), line, column));
 			}
-			if (incompleteTriples.isEmpty() == false) {
-				context.setLocalIncompleteTriples(incompleteTriples);
-			}
-			context.setCurrentObjectResource(new Component(context
-					.generateBlankNode(), line, column));
-		}
-
-		if (context.getProperty() != null) {
-			// determinate literal collecting mode
-			if (context.getContent() == null) {
-				// @content is not present
-				if (context.getDatatype() != null
-						&& context.getDatatype().equals(RDF_XMLLITERAL)) {
-					literalCollector.startCollectingXML();
-				} else {
-					literalCollector.startCollecting();
+	
+			if (context.getProperty() != null) {
+				// determinate literal collecting mode
+				if (context.getContent() == null) {
+					// @content is not present
+					if (context.getDatatype() != null
+							&& context.getDatatype().equals(RDF_XMLLITERAL)) {
+						literalCollector.startCollectingXML();
+					} else {
+						literalCollector.startCollecting();
+					}
 				}
 			}
 		}
@@ -589,108 +607,113 @@ public class RDFaParser implements ContentHandler {
 	public void endRDFaElement(String uri, String localName, String qName)
 			throws SAXException {
 		// 11.
-		if (context.getProperty() != null) {
-			Component datatype = null;
-			Lexical lexical = null;
-			Language language = context.getLanguage() != null ? new Language(
-					context.getLanguage(), context.getBeginTagStartLine(),
-					context.getBeginTagStartColumn()) : null;
-
-			if (context.getDatatype() != null
-					&& context.getDatatype().getValue().isEmpty() == false
-					&& context.getDatatype().getValue().equals(RDF_XMLLITERAL) == false) {
-				// as a typed literal if @datatype is present, does not
-				// have an empty value according to the section on
-				// CURIE and URI Processing, and is not set to XMLLiteral
-				// in the vocabulary
-				// http://www.w3.org/1999/02/22-rdf-syntax-ns#
-				if (context.getContent() != null) {
-					// The actual literal is either the value of
-					// @content (if present)
-					lexical = new Lexical(context.getContent(), line, column);
-				} else {
-					// or a string created by concatenating the
-					// value of all descendant text nodes
+		if (context.isProfileFailed() == false) {
+			if (context.getProperty() != null) {
+				Component datatype = null;
+				Lexical lexical = null;
+				Language language = context.getLanguage() != null ? new Language(
+						context.getLanguage(), context.getBeginTagStartLine(),
+						context.getBeginTagStartColumn()) : null;
+	
+				if (context.getDatatype() != null
+						&& context.getDatatype().getValue().isEmpty() == false
+						&& context.getDatatype().getValue().equals(RDF_XMLLITERAL) == false) {
+					// as a typed literal if @datatype is present, does not
+					// have an empty value according to the section on
+					// CURIE and URI Processing, and is not set to XMLLiteral
+					// in the vocabulary
+					// http://www.w3.org/1999/02/22-rdf-syntax-ns#
+					if (context.getContent() != null) {
+						// The actual literal is either the value of
+						// @content (if present)
+						lexical = new Lexical(context.getContent(), line, column);
+					} else {
+						// or a string created by concatenating the
+						// value of all descendant text nodes
+						lexical = new Lexical(literalCollector.stopCollecting(),
+								context.getBeginTagEndLine(),
+								context.getBeginTagEndColumn());
+					}
+					datatype = context.getDatatype();
+				} else if (context.getDatatype() != null
+						&& context.getDatatype().getValue().equals(RDF_XMLLITERAL) == true) {
+					// as an XML literal if @datatype is present and is set to
+					// XMLLiteral in the vocabulary
+					// http://www.w3.org/1999/02/22-rdf-syntax-ns#
 					lexical = new Lexical(literalCollector.stopCollecting(),
 							context.getBeginTagEndLine(),
 							context.getBeginTagEndColumn());
-				}
-				datatype = context.getDatatype();
-			} else if (context.getDatatype() != null
-					&& context.getDatatype().getValue().equals(RDF_XMLLITERAL) == true) {
-				// as an XML literal if @datatype is present and is set to
-				// XMLLiteral in the vocabulary
-				// http://www.w3.org/1999/02/22-rdf-syntax-ns#
-				lexical = new Lexical(literalCollector.stopCollecting(),
-						context.getBeginTagEndLine(),
-						context.getBeginTagEndColumn());
-				datatype = context.getDatatype();
-			} else {
-				// otherwise as a plain literal
-				if (context.getContent() != null) {
-					// The actual literal is either the value of
-					// @content (if present)
-					lexical = new Lexical(context.getContent(),
-							context.getBeginTagStartLine(),
-							context.getBeginTagStartColumn());
+					datatype = context.getDatatype();
 				} else {
-					// or a string created by concatenating the
-					// value of all descendant text nodes
-					lexical = new Lexical(literalCollector.stopCollecting(),
-							context.getBeginTagEndLine(),
-							context.getBeginTagEndColumn());
-				}
-			}
-
-			if (lexical != null) {
-				// The current object literal is then used with
-				// each predicate to generate a triple
-				for (String predicate : context.getProperty()) {
-					Component predicateURI = context
-							.getQualifiedNameTCU(predicate);
-					if (predicateURI != null) {
-						predicateURI.setLocation(
+					// otherwise as a plain literal
+					if (context.getContent() != null) {
+						// The actual literal is either the value of
+						// @content (if present)
+						lexical = new Lexical(context.getContent(),
 								context.getBeginTagStartLine(),
 								context.getBeginTagStartColumn());
-						tripleSink.generateTripleLiteral(
-								context.getNewSubject(), predicateURI, lexical,
-								language, datatype);
-					}
-				}
-			}
-		}
-
-		// 12.
-		if (context.isSkipElement() == false && context.getNewSubject() != null) {
-			// If the skip element flag is 'false', and new subject
-			// was set to a non-null value, then any incomplete
-			// triples within the current context should be completed
-			if (context.getEvaluationIncompleteTriples() != null) {
-				for (IncompleteTriple incompleteTriple : context
-						.getEvaluationIncompleteTriples()) {
-					if (incompleteTriple.isReverse() == false) {
-						// Forward
-						tripleSink.generateTriple(context.getParentSubject(),
-								incompleteTriple.getURI(),
-								context.getNewSubject());
 					} else {
-						// Backward
-						tripleSink.generateTriple(context.getNewSubject(),
-								incompleteTriple.getURI(),
-								context.getParentSubject());
+						// or a string created by concatenating the
+						// value of all descendant text nodes
+						lexical = new Lexical(literalCollector.stopCollecting(),
+								context.getBeginTagEndLine(),
+								context.getBeginTagEndColumn());
+					}
+				}
+	
+				if (lexical != null) {
+					// The current object literal is then used with
+					// each predicate to generate a triple
+					for (String predicate : context.getProperty()) {
+						try {
+							Component predicateURI = context
+									.getQualifiedNameTCU(predicate);
+							predicateURI.setLocation(
+									context.getBeginTagStartLine(),
+									context.getBeginTagStartColumn());
+							tripleSink.generateTripleLiteral(
+									context.getNewSubject(), predicateURI, lexical,
+									language, datatype);
+						} catch (URISyntaxException exception) {
+							// TODO Auto-generated catch block
+							exception.printStackTrace();
+						}
 					}
 				}
 			}
-		}
-
-		if (format == XHTML_RDFA) {
-			// From XHTML
-			if (lookForBase == true && depth == 2
-					&& "head".equals(localName) == true
-					&& XHTML_NS.equals(uri) == true) {
-				// Start looking for base
-				lookForBase = false;
-				tripleSink.stopRelativeTripleCaching();
+	
+			// 12.
+			if (context.isSkipElement() == false && context.getNewSubject() != null) {
+				// If the skip element flag is 'false', and new subject
+				// was set to a non-null value, then any incomplete
+				// triples within the current context should be completed
+				if (context.getEvaluationIncompleteTriples() != null) {
+					for (IncompleteTriple incompleteTriple : context
+							.getEvaluationIncompleteTriples()) {
+						if (incompleteTriple.isReverse() == false) {
+							// Forward
+							tripleSink.generateTriple(context.getParentSubject(),
+									incompleteTriple.getURI(),
+									context.getNewSubject());
+						} else {
+							// Backward
+							tripleSink.generateTriple(context.getNewSubject(),
+									incompleteTriple.getURI(),
+									context.getParentSubject());
+						}
+					}
+				}
+			}
+	
+			if (format == XHTML_RDFA) {
+				// From XHTML
+				if (lookForBase == true && depth == 2
+						&& "head".equals(localName) == true
+						&& XHTML_NS.equals(uri) == true) {
+					// Start looking for base
+					lookForBase = false;
+					tripleSink.stopRelativeTripleCaching();
+				}
 			}
 		}
 
