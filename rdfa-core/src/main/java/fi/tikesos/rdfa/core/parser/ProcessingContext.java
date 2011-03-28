@@ -23,14 +23,15 @@ public class ProcessingContext {
 	// Blank node handler
 	private BlankNodeHandler blankNodeHandler = null;
 	// Local Context specific
-	private boolean profileFailed = false;
 	private boolean skipElement = false;
 	private Component newSubject = null;
 	private Component currentObjectResource = null;
 	private String content = null;
 	private String[] property = null;
 	private Component datatype = null;
-	// Location information (used for Component)
+	// Custom data: flag to indicate profile loading has failed
+	private boolean profileFailed = false;
+	// Custom data: location information
 	private long beginTagStartLine = 0;
 	private long beginTagStartColumn = 0;
 	private long beginTagEndLine = 0;
@@ -143,7 +144,7 @@ public class ProcessingContext {
 	public BlankNodeHandler getBlankNodeHandler() {
 		return blankNodeHandler;
 	}
-	
+
 	/**
 	 * @param profileFailed
 	 * @return
@@ -151,7 +152,7 @@ public class ProcessingContext {
 	public void setProfileFailed(boolean profileFailed) {
 		this.profileFailed = profileFailed;
 	}
-	
+
 	/**
 	 * @return
 	 */
@@ -408,7 +409,8 @@ public class ProcessingContext {
 		}
 		/*
 		 * if (parentContext != null) { // Terms are not passed, when
-		 * skipElement is true?! if (parentContext.isSkipElement() == false && parentContext.getTermMappings() == termMappings ||
+		 * skipElement is true?! if (parentContext.isSkipElement() == false &&
+		 * parentContext.getTermMappings() == termMappings ||
 		 * parentContext.isSkipElement() == true &&
 		 * parentContext.getParentContext().getTermMappings() == termMappings) {
 		 * termMappings = new Registry(termMappings); }
@@ -484,148 +486,128 @@ public class ProcessingContext {
 
 	/**
 	 * @param base
+	 * @throws URISyntaxException
 	 */
-	public void setBase(String base) {
-		try {
-			this.base.setURI(base);
-		} catch (URISyntaxException exception) {
-			// URI violates RFC 2396
-		}
+	public void setBase(String base) throws URISyntaxException {
+		this.base.setURI(base);
 	}
 
 	/**
 	 * @param inputURI
 	 * @return
 	 */
-	public Component getQualifiedNameU(String inputURI) throws URISyntaxException {
+	public Component expandURI(String inputURI) throws URISyntaxException {
+		return inputURI.isEmpty() == true ? new Component(base)
+				: new Component(base, new URI(inputURI));
+	}
+
+	/**
+	 * @param colon
+	 * @param CURIEorAbsURI
+	 * @return
+	 * @throws URISyntaxException
+	 */
+	private Component expandCURIEorAbsURI(int colon, String CURIEorAbsURI)
+			throws URISyntaxException {
 		Component uri = null;
-		if (inputURI.isEmpty() == true) {
-			// Empty input URI
-			uri = new Component(base);
+		if (colon == 0) {
+			uri = expandDefaultPrefix(CURIEorAbsURI.substring(1));
 		} else {
-			uri = new Component(base, new URI(inputURI));
+			String baseURI = resolvePrefix(CURIEorAbsURI.substring(0, colon));
+			if (baseURI != null) {
+				uri = new Component(baseURI
+						+ CURIEorAbsURI.substring(colon + 1));
+			} else {
+				// Prefix not registered!
+				if (colon == 1 && CURIEorAbsURI.charAt(0) == '_') {
+					// Perhaps Blank node "_:*"
+					uri = new Component(
+							blankNodeHandler.mapBlankNode(CURIEorAbsURI));
+				} else {
+					// Perhaps an absolute uri
+					URI absoluteURI = new URI(CURIEorAbsURI);
+					if (absoluteURI.isAbsolute() == false) {
+						throw new URISyntaxException(CURIEorAbsURI, "\""
+								+ CURIEorAbsURI
+								+ "\" could not be resolved to absolute uri");
+					}
+					uri = new Component(CURIEorAbsURI);
+				}
+			}
 		}
 		return uri;
+	}
+
+	/**
+	 * @param term
+	 * @return
+	 * @throws URISyntaxException
+	 */
+	private Component expandTerm(String term) throws URISyntaxException {
+		Component uri = null;
+		String termURI = resolveTerm(term);
+		if (termURI != null) {
+			// Term URI
+			uri = new Component(termURI);
+		} else if (XMLChar.isValidNCName(term) == true) {
+			// No prefix (if any)
+			if (getVocabulary() == null) {
+				throw new URISyntaxException(
+						term,
+						"\""
+								+ term
+								+ "\" has no prefix. No prefix vocabulary has not been set");
+			}
+			uri = new Component(getVocabulary() + term);
+		} else {
+			throw new URISyntaxException(term, "\"" + term
+					+ "\" is not valid term");
+		}
+		return uri;
+	}
+
+	/**
+	 * @param term
+	 * @return
+	 * @throws URISyntaxException
+	 */
+	private Component expandDefaultPrefix(String term)
+			throws URISyntaxException {
+		if (term.isEmpty() == false && XMLChar.isValidNCName(term) == false) {
+			throw new URISyntaxException(term, "\"" + term
+					+ "\" is not valid term");
+		}
+		return new Component("http://www.w3.org/1999/xhtml/vocab#" + term);
 	}
 
 	/**
 	 * @param CURIEorURI
 	 * @return
 	 */
-	public Component getQualifiedNameCU(String CURIEorURI) throws URISyntaxException {
+	public Component expandCURIEorURI(String CURIEorURI)
+			throws URISyntaxException {
 		if (CURIEorURI.startsWith("[") == true
 				&& CURIEorURI.endsWith("]") == true) {
 			// SafeCURIE
 			CURIEorURI = CURIEorURI.substring(1, CURIEorURI.length() - 1);
 			if (CURIEorURI.isEmpty() == true) {
-				throw new URISyntaxException(CURIEorURI, "\"" + CURIEorURI + "\" is not valid safe curie");
+				throw new URISyntaxException(CURIEorURI, "\"" + CURIEorURI
+						+ "\" is not valid safe curie");
 			}
 		}
 		int colon = CURIEorURI.indexOf(':');
-		Component uri = null;
-		switch (colon) {
-		default:
-			// Prefix
-			String prefix = CURIEorURI.substring(0, colon);
-			String baseURI = resolvePrefix(prefix);
-			if (baseURI != null) {
-				uri = new Component(baseURI + CURIEorURI.substring(colon + 1));
-			} else {
-				// Prefix not found! Could be URI
-				if (prefix.equals("_") == true) {
-					// Map blank node
-					uri = new Component(
-							blankNodeHandler.mapBlankNode(CURIEorURI));
-				} else {
-					URI u = new URI(CURIEorURI);
-					if (u.isAbsolute() == false) {
-						throw new URISyntaxException(CURIEorURI, "\"" + CURIEorURI + "\" could not be resolved to absolute uri");
-					}
-					uri = new Component(CURIEorURI);
-				}
-			}
-			break;
-		case 0:
-			// Default prefix
-			String term = CURIEorURI.substring(1);
-			if (term.isEmpty() == false && XMLChar.isValidNCName(term) == false) {
-				throw new URISyntaxException(CURIEorURI, "\"" + CURIEorURI + "\" is not valid term");
-			}
-			uri = new Component("http://www.w3.org/1999/xhtml/vocab#"
-					+ term);
-			break;
-		case -1:
-			// No prefix
-			uri = getQualifiedNameU(CURIEorURI);
-			break;
-		}
-		return uri;
+		return colon != -1 ? expandCURIEorAbsURI(colon, CURIEorURI)
+				: expandURI(CURIEorURI);
 	}
 
 	/**
 	 * @param TERMorCURIEorAbsURI
 	 * @return
 	 */
-	public Component getQualifiedNameTCU(String TERMorCURIEorAbsURI) throws URISyntaxException {
+	public Component expandTERMorCURIEorAbsURI(String TERMorCURIEorAbsURI)
+			throws URISyntaxException {
 		int colon = TERMorCURIEorAbsURI.indexOf(':');
-		Component uri = null;
-		switch (colon) {
-		default:
-			// Prefix
-			String prefix = TERMorCURIEorAbsURI.substring(0, colon);
-			String baseURI = resolvePrefix(prefix);
-			if (baseURI != null) {
-				uri = new Component(baseURI
-						+ TERMorCURIEorAbsURI.substring(colon + 1));
-			} else {
-				// Prefix not registered!
-				if (prefix.equals("_") == true) {
-					// Perhaps Blank node "_:*"
-					uri = new Component(
-							blankNodeHandler.mapBlankNode(TERMorCURIEorAbsURI));
-				} else {
-					// Perhaps an absolute uri
-					URI absoluteURI = new URI(TERMorCURIEorAbsURI);
-					if (absoluteURI.isAbsolute() == false) {
-						throw new URISyntaxException(TERMorCURIEorAbsURI, "\"" + TERMorCURIEorAbsURI + "\" could not be resolved to absolute uri");
-					}
-					uri = new Component(TERMorCURIEorAbsURI);
-				}
-			}
-			break;
-		case 0:
-			// Default prefix
-			String term = TERMorCURIEorAbsURI.substring(1);
-			if (term.isEmpty() == false && XMLChar.isValidNCName(term) == false) {
-				throw new URISyntaxException(TERMorCURIEorAbsURI, "\"" + TERMorCURIEorAbsURI + "\" is not valid term");
-			}
-			uri = new Component("http://www.w3.org/1999/xhtml/vocab#"
-					+ term);
-			break;
-		case -1:
-			// Term or no prefix
-			if (TERMorCURIEorAbsURI.isEmpty() == false) {
-				// Try to resolve as a term
-				String termURI = resolveTerm(TERMorCURIEorAbsURI);
-				if (termURI != null) {
-					// Term URI
-					uri = new Component(termURI);
-				} else if (XMLChar.isValidNCName(TERMorCURIEorAbsURI) == true) {
-					// No prefix (if any)
-					if (getVocabulary() != null) {
-						uri = new Component(getVocabulary()
-								+ TERMorCURIEorAbsURI);
-					} else {
-						throw new URISyntaxException(TERMorCURIEorAbsURI, "\"" + TERMorCURIEorAbsURI + "\" has no prefix. No prefix vocabulary is not set");
-					}
-				} else {
-					throw new URISyntaxException(TERMorCURIEorAbsURI, "\"" + TERMorCURIEorAbsURI + "\" is not valid term");
-				}
-			} else {
-				throw new URISyntaxException(TERMorCURIEorAbsURI, "\"" + TERMorCURIEorAbsURI + "\" is not valid term");
-			}
-			break;
-		}
-		return uri;
+		return colon != -1 ? expandCURIEorAbsURI(colon, TERMorCURIEorAbsURI)
+				: expandTerm(TERMorCURIEorAbsURI);
 	}
 }
