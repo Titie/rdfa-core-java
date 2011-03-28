@@ -280,7 +280,12 @@ public class RDFaParser implements ContentHandler {
 				if (lookForBase == true && "base".equals(localName) == true
 						&& XHTML_NS.equals(uri) == true) {
 					// Set base to @href
-					context.setBase(href);
+					try {
+						context.setBase(href);
+					} catch (URISyntaxException exception) {
+						// TODO Log exception
+						exception.printStackTrace();
+					}
 				}
 				break;
 			}
@@ -319,7 +324,7 @@ public class RDFaParser implements ContentHandler {
 	
 			if (datatype != null) {
 				try {
-					Component datatypeURI = context.getQualifiedNameTCU(datatype);
+					Component datatypeURI = context.expandTERMorCURIEorAbsURI(datatype);
 					datatypeURI.setLocation(line, column);
 					context.setDatatype(datatypeURI);
 				} catch (URISyntaxException exception) {
@@ -336,36 +341,33 @@ public class RDFaParser implements ContentHandler {
 				try {
 					if (about != null) {
 						// by using the URI from @about, if present
-						Component aboutURI = context.getQualifiedNameCU(about);
+						Component aboutURI = context.expandCURIEorURI(about);
 						aboutURI.setLocation(line, column);
 						context.setNewSubject(aboutURI);
 					} else if (src != null) {
 						// otherwise, by using the URI from @src, if present
-						Component srcURI = context.getQualifiedNameU(src);
+						Component srcURI = context.expandURI(src);
 						srcURI.setLocation(line, column);
 						context.setNewSubject(srcURI);
 					} else if (resource != null) {
 						// otherwise, by using the URI from @resource, if present
-						Component resourceURI = context.getQualifiedNameCU(resource);
+						Component resourceURI = context.expandCURIEorURI(resource);
 						resourceURI.setLocation(line, column);
 						context.setNewSubject(resourceURI);
 					} else if (href != null) {
 						// otherwise, by using the URI from @href, if present
-						Component hrefURI = context.getQualifiedNameU(href);
+						Component hrefURI = context.expandURI(href);
 						hrefURI.setLocation(line, column);
 						context.setNewSubject(hrefURI);
-					} else if (depth == 2 && format == XHTML_RDFA) {
+					} else if (depth == 2) {
 						// if no URI is provided by a resource attribute, then
-						// first check to see if the element is the head or body
+						// first check to see if the element is a root
 						// element. If it is, then act as if there is an empty
 						// @about present, and process it according to the rule
 						// for @about.
-						if (("head".equals(localName) == true || "body"
-								.equals(localName)) && XHTML_NS.equals(uri) == true) {
-							Component aboutURI = context.getQualifiedNameCU("");
-							aboutURI.setLocation(line, column);
-							context.setNewSubject(aboutURI);
-						}
+						Component aboutURI = context.expandCURIEorURI("");
+						aboutURI.setLocation(line, column);
+						context.setNewSubject(aboutURI);
 					}
 				} catch (URISyntaxException exception) {
 					// TODO Auto-generated catch block
@@ -402,32 +404,28 @@ public class RDFaParser implements ContentHandler {
 				try {
 					if (about != null) {
 						// by using the URI from @about, if present
-						Component aboutURI = context.getQualifiedNameCU(about);
+						Component aboutURI = context.expandCURIEorURI(about);
 						aboutURI.setLocation(line, column);
 						context.setNewSubject(aboutURI);
 					} else if (src != null) {
 						// otherwise, by using the URI from @src, if present
-						Component srcURI = context.getQualifiedNameU(src);
+						Component srcURI = context.expandURI(src);
 						srcURI.setLocation(line, column);
 						context.setNewSubject(srcURI);
-					} else if (depth == 2 && format == XHTML_RDFA) {
+					} else if (depth == 2) {
 						// if no URI is provided by a resource attribute, then
-						// first check to see if the element is the head or body
+						// first check to see if the element is a root
 						// element. If it is, then act as if there is an empty
 						// @about present, and process it according to the rule
 						// for @about.
-						if (("head".equals(localName) == true || "body"
-								.equals(localName)) && XHTML_NS.equals(uri) == true) {
-							Component aboutURI = context.getQualifiedNameCU("");
-							aboutURI.setLocation(line, column);
-							context.setNewSubject(aboutURI);
-						}
+						Component aboutURI = context.expandCURIEorURI("");
+						aboutURI.setLocation(line, column);
+						context.setNewSubject(aboutURI);
 					}
 				} catch (URISyntaxException exception) {
 					// TODO Auto-generated catch block
 					exception.printStackTrace();
 				}
-				
 	
 				if (context.getNewSubject() == null) {
 					// If no URI is provided then the first match from the following
@@ -448,12 +446,12 @@ public class RDFaParser implements ContentHandler {
 				try {
 					if (resource != null) {
 						// by using the URI from @resource, if present
-						Component resourceURI = context.getQualifiedNameCU(resource);
+						Component resourceURI = context.expandCURIEorURI(resource);
 						resourceURI.setLocation(line, column);
 						context.setCurrentObjectResource(resourceURI);
 					} else if (href != null) {
 						// otherwise, by using the URI from @href, if present
-						Component hrefURI = context.getQualifiedNameU(href);
+						Component hrefURI = context.expandURI(href);
 						hrefURI.setLocation(line, column);
 						context.setCurrentObjectResource(hrefURI);
 					}
@@ -476,7 +474,7 @@ public class RDFaParser implements ContentHandler {
 					// and CURIE Processing, each of which is used
 					// to generate a triple
 					try {
-						Component typeURI = context.getQualifiedNameTCU(type);
+						Component typeURI = context.expandTERMorCURIEorAbsURI(type);
 						typeURI.setLocation(line, column);
 						tripleSink.generateTriple(context.getNewSubject(),
 								new Component(RDF_NS + "type", line, column),
@@ -501,7 +499,7 @@ public class RDFaParser implements ContentHandler {
 					for (String predicate : rel) {
 						try {
 							Component predicateURI = context
-									.getQualifiedNameTCU(predicate);
+									.expandTERMorCURIEorAbsURI(predicate);
 							predicateURI.setLocation(line, column);
 							tripleSink.generateTriple(context.getNewSubject(),
 									predicateURI,
@@ -520,7 +518,7 @@ public class RDFaParser implements ContentHandler {
 					for (String predicate : rev) {
 						try {
 							Component predicateURI = context
-									.getQualifiedNameTCU(predicate);
+									.expandTERMorCURIEorAbsURI(predicate);
 							predicateURI.setLocation(line, column);
 							tripleSink.generateTriple(
 									context.getCurrentObjectResource(),
@@ -548,7 +546,7 @@ public class RDFaParser implements ContentHandler {
 					for (String predicate : rel) {
 						try {
 							Component predicateURI = context
-									.getQualifiedNameTCU(predicate);
+									.expandTERMorCURIEorAbsURI(predicate);
 							predicateURI.setLocation(line, column);
 							incompleteTriples.add(new IncompleteTriple(
 									predicateURI, false));
@@ -566,7 +564,7 @@ public class RDFaParser implements ContentHandler {
 					for (String predicate : rev) {
 						try {
 							Component predicateURI = context
-									.getQualifiedNameTCU(predicate);
+									.expandTERMorCURIEorAbsURI(predicate);
 							predicateURI.setLocation(line, column);
 							incompleteTriples.add(new IncompleteTriple(
 									predicateURI, true));
@@ -667,7 +665,7 @@ public class RDFaParser implements ContentHandler {
 					for (String predicate : context.getProperty()) {
 						try {
 							Component predicateURI = context
-									.getQualifiedNameTCU(predicate);
+									.expandTERMorCURIEorAbsURI(predicate);
 							predicateURI.setLocation(
 									context.getBeginTagStartLine(),
 									context.getBeginTagStartColumn());

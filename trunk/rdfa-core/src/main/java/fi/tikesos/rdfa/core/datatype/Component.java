@@ -110,7 +110,7 @@ public class Component implements Location {
 	 * @return true if uri is absolute, otherwise false
 	 */
 	public boolean isAbsolute() {
-		return baseURI != null && uri.isAbsolute();
+		return baseURI != null;
 	}
 
 	/**
