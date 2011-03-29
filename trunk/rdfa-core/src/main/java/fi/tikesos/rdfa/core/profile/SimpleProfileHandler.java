@@ -12,6 +12,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
 import fi.tikesos.rdfa.core.datatype.Component;
 import fi.tikesos.rdfa.core.datatype.Language;
 import fi.tikesos.rdfa.core.datatype.Lexical;
+import fi.tikesos.rdfa.core.exception.NullErrorHandler;
 import fi.tikesos.rdfa.core.parser.RDFaParser;
 import fi.tikesos.rdfa.core.triple.TripleSink;
 import fi.tikesos.rdfa.core.util.NullEntityResolver;
@@ -31,7 +32,7 @@ public class SimpleProfileHandler implements ProfileHandler {
 			XMLReader reader = XMLReaderFactory.createXMLReader();
 			ProfileTripleSink profileTripleSink = new ProfileTripleSink();
 			RDFaParser parser = new RDFaParser(profileURI, profileTripleSink,
-					null, RDFaParser.XML_RDFA);
+					null, new NullErrorHandler(), RDFaParser.XML_RDFA);
 
 			reader.setFeature("http://xml.org/sax/features/validation",
 					Boolean.FALSE);
