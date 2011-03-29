@@ -1,5 +1,5 @@
 package fi.tikesos.rdfa.core.profile;
 
-public interface ProfileLoader {
+public interface ProfileHandler {
 	public Profile loadProfile(String profileURI) throws Exception;
 }

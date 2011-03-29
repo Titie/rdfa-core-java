@@ -62,8 +62,8 @@ public class RDFaParserTest {
 					Boolean.FALSE);
 
 			for (String currentTest : tests) {
-//				if (currentTest.compareTo("0186") == 0) break;
-//				if (currentTest.compareTo("0189") != 0) continue;
+//				if (currentTest.compareTo("0186") == 0) break
+//				if (currentTest.compareTo("0017") == 0) continue;
 				InputStream inputXML = this.getClass().getResourceAsStream(
 						"/tests/xhtml/" + currentTest + ".xhtml");
 				if (inputXML == null) continue;
