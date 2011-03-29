@@ -16,8 +16,8 @@ import com.hp.hpl.jena.rdf.model.RDFErrorHandler;
 import com.hp.hpl.jena.rdf.model.RDFReader;
 
 import fi.tikesos.rdfa.core.parser.RDFaParser;
-import fi.tikesos.rdfa.core.profile.ProfileLoader;
-import fi.tikesos.rdfa.core.profile.SimpleProfileLoader;
+import fi.tikesos.rdfa.core.profile.ProfileHandler;
+import fi.tikesos.rdfa.core.profile.SimpleProfileHandler;
 import fi.tikesos.rdfa.core.triple.TripleSink;
 import fi.tikesos.rdfa.core.util.NullEntityResolver;
 
@@ -26,7 +26,7 @@ import fi.tikesos.rdfa.core.util.NullEntityResolver;
  * 
  */
 public class RDFaReader implements RDFReader {
-	private static ProfileLoader profileLoader = null;
+	private static ProfileHandler profileHandler = null;
 	private RDFErrorHandler errorHandler = null;
 
 	/*
@@ -46,14 +46,14 @@ public class RDFaReader implements RDFReader {
 					Boolean.FALSE);
 			reader.setEntityResolver(new NullEntityResolver());
 
-			if (profileLoader == null) {
-				profileLoader = new SimpleProfileLoader();
+			if (profileHandler == null) {
+				profileHandler = new SimpleProfileHandler();
 			}
 
 			try {
 				TripleSink sink = new JenaTripleSink(model);
 				ContentHandler parser = new RDFaParser(base, sink,
-						profileLoader, RDFaParser.XHTML_RDFA);
+						profileHandler, RDFaParser.XHTML_RDFA);
 				reader.setContentHandler(parser);
 				reader.parse(new InputSource(r));
 			} catch (IOException e) {

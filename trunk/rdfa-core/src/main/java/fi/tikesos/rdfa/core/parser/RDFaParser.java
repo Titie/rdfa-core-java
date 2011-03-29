@@ -16,7 +16,7 @@ import fi.tikesos.rdfa.core.datatype.Language;
 import fi.tikesos.rdfa.core.datatype.Lexical;
 import fi.tikesos.rdfa.core.datatype.PrefixMapping;
 import fi.tikesos.rdfa.core.profile.Profile;
-import fi.tikesos.rdfa.core.profile.ProfileLoader;
+import fi.tikesos.rdfa.core.profile.ProfileHandler;
 import fi.tikesos.rdfa.core.triple.TripleSink;
 import fi.tikesos.rdfa.core.literal.LiteralCollector;
 
@@ -47,7 +47,7 @@ public class RDFaParser implements ContentHandler {
 	private TripleSink tripleSink;
 	private LiteralCollector literalCollector;
 	private ProcessingContext context;
-	private ProfileLoader profileLoader;
+	private ProfileHandler profileHandler;
 	private long line;
 	private long column;
 
@@ -56,15 +56,15 @@ public class RDFaParser implements ContentHandler {
 	 * 
 	 * @param base
 	 * @param tripleSink
-	 * @param profileLoader
+	 * @param profileHandler
 	 * @throws URISyntaxException
 	 */
 	public RDFaParser(String base, TripleSink tripleSink,
-			ProfileLoader profileLoader, int format) throws URISyntaxException {
+			ProfileHandler profileHandler, int format) throws URISyntaxException {
 		// Create default evaluation context
 		this.context = new ProcessingContext(base);
 		this.context.setNewSubject(new Component(base));
-		this.profileLoader = profileLoader;
+		this.profileHandler = profileHandler;
 		this.tripleSink = tripleSink;
 		this.literalCollector = new LiteralCollector();
 		this.line = 0;
@@ -258,12 +258,13 @@ public class RDFaParser implements ContentHandler {
 			switch (depth) {
 			case 1:
 				// Default vocabulary for XHTML
-				if (profileLoader != null) {
+				if (profileHandler != null) {
 					try {
-						processProfile(profileLoader.loadProfile(XHTML_PROFILE));
+						processProfile(profileHandler.loadProfile(XHTML_PROFILE));
 					} catch (Exception exception) {
 						// Failed profile causes all subsequent elements
 						// to be ignored!
+						exception.printStackTrace();
 						context.setProfileFailed(true);
 					}
 				}
@@ -291,15 +292,16 @@ public class RDFaParser implements ContentHandler {
 			}
 		}
 
-		if (profileLoader != null && profile != null) {
+		if (profileHandler != null && profile != null) {
 			// Load profiles
 			try {
 				for (String profileURI : profile) {
-					processProfile(profileLoader.loadProfile(profileURI));
+					processProfile(profileHandler.loadProfile(profileURI));
 				}
 			} catch (Exception exception) {
 				// Failed profile causes all subsequent elements
 				// to be ignored!
+				exception.printStackTrace();
 				context.setProfileFailed(true);
 			}
 		}

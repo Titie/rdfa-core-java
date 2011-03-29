@@ -22,7 +22,7 @@ import fi.tikesos.rdfa.core.util.NullEntityResolver;
  * @author ssakorho
  * 
  */
-public class SimpleProfileLoader implements ProfileLoader {
+public class SimpleProfileHandler implements ProfileHandler {
 	private Map<String, Profile> profileCache = new HashMap<String, Profile>();
 	
 	public Profile loadProfile(String profileURI) throws Exception {

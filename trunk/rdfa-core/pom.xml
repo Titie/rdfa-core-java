@@ -4,7 +4,7 @@
 
   <groupId>fi.tikesos</groupId>
   <artifactId>rdfa-core</artifactId>
-  <version>0.0.2</version>
+  <version>0.0.3</version>
   <packaging>jar</packaging>
   <name>rdfa-core</name>
   <url>http://rdfa-core.googlecode.com</url>
