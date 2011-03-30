@@ -36,6 +36,9 @@ public class SimpleProfileHandler implements ProfileHandler {
 
 			reader.setFeature("http://xml.org/sax/features/validation",
 					Boolean.FALSE);
+			reader.setFeature("http://xml.org/sax/features/namespace-prefixes",
+					Boolean.TRUE);
+			
 			reader.setContentHandler(parser);
 			reader.setEntityResolver(new NullEntityResolver());
 			reader.parse(new InputSource(new URI(profileURI).toURL()

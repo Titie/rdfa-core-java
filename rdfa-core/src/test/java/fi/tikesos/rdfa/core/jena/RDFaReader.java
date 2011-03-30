@@ -46,6 +46,8 @@ public class RDFaReader implements RDFReader {
 			reader = XMLReaderFactory.createXMLReader();
 			reader.setFeature("http://xml.org/sax/features/validation",
 					Boolean.FALSE);
+			reader.setFeature("http://xml.org/sax/features/namespace-prefixes",
+					Boolean.TRUE);
 			reader.setEntityResolver(new NullEntityResolver());
 
 			if (profileHandler == null) {

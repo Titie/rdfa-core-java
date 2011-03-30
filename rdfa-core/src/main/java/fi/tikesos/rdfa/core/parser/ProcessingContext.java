@@ -370,16 +370,16 @@ public class ProcessingContext {
 
 	/**
 	 * @param Prefix
-	 * @param URI
+	 * @param uri
 	 */
-	public void registerPrefix(String Prefix, String URI) {
+	public void registerPrefix(String Prefix, String uri) {
 		if (Prefix.compareTo("_") != 0) {
 			// '_' is prohibited namespace prefix
 			if (parentContext != null
 					&& prefixMappings == parentContext.getPrefixMappings()) {
 				prefixMappings = new Registry(prefixMappings);
 			}
-			prefixMappings.set(Prefix, URI);
+			prefixMappings.set(Prefix, uri);
 		}
 	}
 
@@ -400,24 +400,14 @@ public class ProcessingContext {
 
 	/**
 	 * @param Term
-	 * @param URI
+	 * @param uri
 	 */
-	public void registerTerm(String Term, String URI) {
+	public void registerTerm(String Term, String uri) {
 		if (parentContext != null
 				&& parentContext.getTermMappings() == termMappings) {
 			termMappings = new Registry(termMappings);
 		}
-		/*
-		 * if (parentContext != null) { // Terms are not passed, when
-		 * skipElement is true?! if (parentContext.isSkipElement() == false &&
-		 * parentContext.getTermMappings() == termMappings ||
-		 * parentContext.isSkipElement() == true &&
-		 * parentContext.getParentContext().getTermMappings() == termMappings) {
-		 * termMappings = new Registry(termMappings); }
-		 * 
-		 * }
-		 */
-		termMappings.set(Term, URI);
+		termMappings.set(Term, uri);
 	}
 
 	/**
@@ -500,6 +490,19 @@ public class ProcessingContext {
 		return inputURI.isEmpty() == true ? new Component(base)
 				: new Component(base, new URI(inputURI));
 	}
+	
+	/**
+	 * @param term
+	 * @return
+	 * @throws URISyntaxException
+	 */
+	private Component expandDefaultPrefix(String term)
+			throws URISyntaxException {
+		if (term.isEmpty() == false && XMLChar.isValidNCName(term) == false) {
+			throw new URISyntaxException(term, "not a valid term");
+		}
+		return new Component("http://www.w3.org/1999/xhtml/vocab#" + term);
+	}
 
 	/**
 	 * @param colon
@@ -513,12 +516,13 @@ public class ProcessingContext {
 		if (colon == 0) {
 			uri = expandDefaultPrefix(CURIEorAbsURI.substring(1));
 		} else {
-			String baseURI = resolvePrefix(CURIEorAbsURI.substring(0, colon));
-			if (baseURI != null) {
-				uri = new Component(baseURI
-						+ CURIEorAbsURI.substring(colon + 1));
+			// Perhaps a CURIE
+			String prefixURI = resolvePrefix(CURIEorAbsURI.substring(0, colon));
+			if (prefixURI != null) {
+				uri = new Component(base,
+						new URI(prefixURI + CURIEorAbsURI.substring(colon + 1)));
 			} else {
-				// Prefix not registered!
+				// Prefix not registered, not a CURIE
 				if (colon == 1 && CURIEorAbsURI.charAt(0) == '_') {
 					// Perhaps Blank node "_:*"
 					uri = new Component(
@@ -527,9 +531,7 @@ public class ProcessingContext {
 					// Perhaps an absolute uri
 					URI absoluteURI = new URI(CURIEorAbsURI);
 					if (absoluteURI.isAbsolute() == false) {
-						throw new URISyntaxException(CURIEorAbsURI, "\""
-								+ CURIEorAbsURI
-								+ "\" could not be resolved to absolute uri");
+						throw new URISyntaxException(CURIEorAbsURI, "not an absolute uri");
 					}
 					uri = new Component(CURIEorAbsURI);
 				}
@@ -553,31 +555,13 @@ public class ProcessingContext {
 			// No prefix (if any)
 			if (getVocabulary() == null) {
 				throw new URISyntaxException(
-						term,
-						"\""
-								+ term
-								+ "\" has no prefix. No prefix vocabulary has not been set");
+						term, "define no prefix vocabulary or add prefix to term");
 			}
 			uri = new Component(getVocabulary() + term);
 		} else {
-			throw new URISyntaxException(term, "\"" + term
-					+ "\" is not valid term");
+			throw new URISyntaxException(term, "not a valid term");
 		}
 		return uri;
-	}
-
-	/**
-	 * @param term
-	 * @return
-	 * @throws URISyntaxException
-	 */
-	private Component expandDefaultPrefix(String term)
-			throws URISyntaxException {
-		if (term.isEmpty() == false && XMLChar.isValidNCName(term) == false) {
-			throw new URISyntaxException(term, "\"" + term
-					+ "\" is not valid term");
-		}
-		return new Component("http://www.w3.org/1999/xhtml/vocab#" + term);
 	}
 
 	/**
@@ -589,11 +573,10 @@ public class ProcessingContext {
 		if (CURIEorURI.startsWith("[") == true
 				&& CURIEorURI.endsWith("]") == true) {
 			// SafeCURIE
-			CURIEorURI = CURIEorURI.substring(1, CURIEorURI.length() - 1);
-			if (CURIEorURI.isEmpty() == true) {
-				throw new URISyntaxException(CURIEorURI, "\"" + CURIEorURI
-						+ "\" is not valid safe curie");
+			if (CURIEorURI.length() == 2) {
+				throw new URISyntaxException(CURIEorURI, "not a valid safe curie");
 			}
+			CURIEorURI = CURIEorURI.substring(1, CURIEorURI.length() - 1);
 		}
 		int colon = CURIEorURI.indexOf(':');
 		return colon != -1 ? expandCURIEorAbsURI(colon, CURIEorURI)
