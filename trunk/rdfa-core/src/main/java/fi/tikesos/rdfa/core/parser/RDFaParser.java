@@ -124,8 +124,7 @@ public class RDFaParser implements ContentHandler {
 	@Override
 	public void startPrefixMapping(String prefix, String uri)
 			throws SAXException {
-		// Register prefix to current context
-		context.registerPrefix(prefix, uri);
+		// Start prefix mapping
 	}
 
 	/*
@@ -141,13 +140,21 @@ public class RDFaParser implements ContentHandler {
 	public void processProfile(Profile profile) {
 		// Prefix mappings
 		for (Entry<String, String> p : profile.getPrefixMappings().entrySet()) {
-			context.registerPrefix(p.getKey(), p.getValue());
+			try {
+				context.registerPrefix(p.getKey(), p.getValue());
+			} catch (Exception exception) {
+				errorHandler.warning(new NotURIException("profile", line, column, exception));
+			}
 		}
 		// Term mappings
 		for (Entry<String, String> p : profile.getTermMappings().entrySet()) {
 			// May not overwrite existing term mapping
 			if (context.resolveTerm(p.getKey()) == null) {
-				context.registerTerm(p.getKey(), p.getValue());
+				try {
+					context.registerTerm(p.getKey(), p.getValue());
+				} catch (Exception exception) {
+					errorHandler.warning(new NotURIException("profile", line, column, exception));
+				}
 			}
 		}
 		// Default vocabulary
@@ -209,10 +216,9 @@ public class RDFaParser implements ContentHandler {
 								prefix[n + 1]));
 					} // Else exception?
 				}
-			} else if (atts.getQName(i).startsWith("xmlns:")) {
+			} else if (attributeQName.startsWith("xmlns:")) {
 				// @xmlns:*
-				xmlnsList.add(new PrefixMapping(attributeQName, atts
-						.getLocalName(i), atts.getValue(i)));
+				xmlnsList.add(new PrefixMapping(attributeQName, attributeQName.substring(6), atts.getValue(i)));
 			} else if ("lang".equals(attributeQName) == true
 					|| (XML_NS.equals(atts.getURI(i)) == true && "lang"
 							.equals(atts.getLocalName(i)) == true)) {
@@ -341,12 +347,20 @@ public class RDFaParser implements ContentHandler {
 
 			// Register namespace mappings defined at @xmlns:*
 			for (PrefixMapping pm : xmlnsList) {
-				context.registerPrefix(pm.getPrefix(), pm.getURI());
+				try {
+					context.registerPrefix(pm.getPrefix(), pm.getURI());
+				} catch (Exception exception) {
+					errorHandler.warning(new NotURIException(pm.getqName(), line, column, exception));
+				}
 			}
 
 			// Register namespace mappings defined at @prefix
 			for (PrefixMapping pm : prefixList) {
-				context.registerPrefix(pm.getPrefix(), pm.getURI());
+				try {
+					context.registerPrefix(pm.getPrefix(), pm.getURI());
+				} catch (Exception exception) {
+					errorHandler.warning(new NotURIException(pm.getqName(), line, column, exception));
+				}
 			}
 
 			if (datatype != null) {
