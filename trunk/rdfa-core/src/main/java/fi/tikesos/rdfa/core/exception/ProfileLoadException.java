@@ -35,9 +35,9 @@ public class ProfileLoadException extends RDFaException {
 	 * @param column
 	 * @param cause
 	 */
-	public ProfileLoadException(String profileURI, long line, long column,
+	public ProfileLoadException(String profileURI, String elementName, long line, long column,
 			Throwable cause) {
-		super(cause, line, column);
+		super(elementName, cause, line, column);
 		this.profileURI = profileURI;
 	}
 	

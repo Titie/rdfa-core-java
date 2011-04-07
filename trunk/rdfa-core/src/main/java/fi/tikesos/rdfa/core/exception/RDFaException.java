@@ -22,15 +22,18 @@ public class RDFaException extends Exception implements Location {
 	private static final long serialVersionUID = 1L;
 	private long line;
 	private long column;
+	private String elementName;
 
 	/**
 	 * Constructor
 	 * 
+	 * @param elementName
 	 * @param line
 	 * @param column
 	 */
-	public RDFaException(long line, long column) {
+	public RDFaException(String elementName, long line, long column) {
 		super();
+		this.elementName = elementName;
 		this.line = line;
 		this.column = column;
 	}
@@ -38,12 +41,14 @@ public class RDFaException extends Exception implements Location {
 	/**
 	 * Constructor
 	 * 
+	 * @param elementName
 	 * @param cause
 	 * @param line
 	 * @param column
 	 */
-	public RDFaException(Throwable cause, long line, long column) {
+	public RDFaException(String elementName, Throwable cause, long line, long column) {
 		super(cause);
+		this.elementName = elementName;
 		this.line = line;
 		this.column = column;
 	}
@@ -74,6 +79,13 @@ public class RDFaException extends Exception implements Location {
 	public void setLocation(long line, long column) {
 		this.line = line;
 		this.column = column;
+	}
+	
+	/**
+	 * @return
+	 */
+	public String getElementName() {
+		return elementName;
 	}
 
 }

@@ -22,9 +22,6 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.Locator;
-import org.xml.sax.SAXException;
 
 import fi.tikesos.rdfa.core.datatype.IncompleteTriple;
 import fi.tikesos.rdfa.core.datatype.Component;
@@ -53,7 +50,7 @@ import fi.tikesos.rdfa.core.literal.LiteralCollector;
  * @email sami.s.korhonen@uef.fi
  * @version 0.1
  */
-public class RDFaParser implements ContentHandler {
+public class RDFaParser {
 	public static final int DYNAMIC = 0;
 	public static final int XHTML_RDFA = 1;
 	public static final int XML_RDFA = 2;
@@ -65,14 +62,11 @@ public class RDFaParser implements ContentHandler {
 	private int format;
 	private int depth;
 	private boolean lookForBase;
-	private Locator locator;
 	private TripleSink tripleSink;
 	private LiteralCollector literalCollector;
 	private ErrorHandler errorHandler;
 	private ProcessingContext context;
 	private ProfileHandler profileHandler;
-	private long line;
-	private long column;
 
 	/**
 	 * Class constructor
@@ -92,85 +86,21 @@ public class RDFaParser implements ContentHandler {
 		this.profileHandler = profileHandler;
 		this.errorHandler = errorHandler;
 		this.literalCollector = new LiteralCollector();
-		this.line = 0;
-		this.column = 0;
 		this.format = format;
 		this.depth = 0;
 		this.lookForBase = (format == XHTML_RDFA ? true : false);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.xml.sax.ContentHandler#setDocumentLocator(org.xml.sax.Locator)
-	 */
-	@Override
-	public void setDocumentLocator(Locator locator) {
-		this.locator = locator;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.xml.sax.ContentHandler#startDocument()
-	 */
-	@Override
-	public void startDocument() throws SAXException {
-		// Start document
-		saveLocation();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.xml.sax.ContentHandler#endDocument()
-	 */
-	@Override
-	public void endDocument() throws SAXException {
-		// End document
-		saveLocation();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.xml.sax.ContentHandler#startPrefixMapping(java.lang.String,
-	 * java.lang.String)
-	 */
-	@Override
-	public void startPrefixMapping(String prefix, String uri)
-			throws SAXException {
-		// Start prefix mapping
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.xml.sax.ContentHandler#endPrefixMapping(java.lang.String)
-	 */
-	@Override
-	public void endPrefixMapping(String prefix) throws SAXException {
-		// End prefix-mapping
-	}
-
 	public void processProfile(Profile profile) {
 		// Prefix mappings
 		for (Entry<String, String> p : profile.getPrefixMappings().entrySet()) {
-			try {
-				context.registerPrefix(p.getKey(), p.getValue());
-			} catch (Exception exception) {
-				errorHandler.warning(new NotURIException("profile", line, column, exception));
-			}
+			context.registerPrefix(p.getKey(), p.getValue());
 		}
 		// Term mappings
 		for (Entry<String, String> p : profile.getTermMappings().entrySet()) {
 			// May not overwrite existing term mapping
 			if (context.resolveTerm(p.getKey()) == null) {
-				try {
-					context.registerTerm(p.getKey(), p.getValue());
-				} catch (Exception exception) {
-					errorHandler.warning(new NotURIException("profile", line, column, exception));
-				}
+				context.registerTerm(p.getKey(), p.getValue());
 			}
 		}
 		// Default vocabulary
@@ -187,7 +117,11 @@ public class RDFaParser implements ContentHandler {
 	 * @throws SAXException
 	 */
 	public void beginRDFaElement(String uri, String localName, String qName,
-			Attributes atts) throws SAXException {
+			Attributes atts, long startLine, long startColumn, long endLine,
+			long endColumn) {
+		if (literalCollector.collectStartElement(uri, localName, qName, atts) == true) {
+			return;
+		}
 		String[] rel = null;
 		String[] rev = null;
 		String about = null;
@@ -203,14 +137,8 @@ public class RDFaParser implements ContentHandler {
 
 		// create new evaluation context
 		depth++;
-		context = new ProcessingContext(context, line, column,
-				locator.getLineNumber(), locator.getColumnNumber());
-
-		// update begin tag location
-		context.setBeginTagStartLine(line);
-		context.setBeginTagStartColumn(column);
-		context.setBeginTagEndLine(locator.getLineNumber());
-		context.setBeginTagEndColumn(locator.getColumnNumber());
+		context = new ProcessingContext(context, startLine, startColumn,
+				endLine, endColumn);
 
 		// Process attributes
 		for (int i = 0; i < atts.getLength(); i++) {
@@ -234,7 +162,8 @@ public class RDFaParser implements ContentHandler {
 				}
 			} else if (attributeQName.startsWith("xmlns:")) {
 				// @xmlns:*
-				xmlnsList.add(new PrefixMapping(attributeQName, attributeQName.substring(6), atts.getValue(i)));
+				xmlnsList.add(new PrefixMapping(attributeQName, attributeQName
+						.substring(6), atts.getValue(i)));
 			} else if ("lang".equals(attributeQName) == true
 					|| (XML_NS.equals(atts.getURI(i)) == true && "lang"
 							.equals(atts.getLocalName(i)) == true)) {
@@ -297,13 +226,15 @@ public class RDFaParser implements ContentHandler {
 						// Failed profile causes all subsequent elements
 						// to be ignored!
 						errorHandler.fatalError(new ProfileLoadException(
-								XHTML_PROFILE, line, column, exception));
+								XHTML_PROFILE, "profile", startLine,
+								startColumn, exception));
 						context.setProfileFailed(true);
 					}
 				} else {
 					errorHandler
 							.fatalError(new ProfileHandlerNotDefinedException(
-									XHTML_PROFILE, line, column));
+									XHTML_PROFILE, "profile", startLine,
+									startColumn));
 					context.setProfileFailed(true);
 				}
 				break;
@@ -322,8 +253,8 @@ public class RDFaParser implements ContentHandler {
 					try {
 						context.setBase(href);
 					} catch (Exception exception) {
-						errorHandler.warning(new NotURIException("href", line,
-								column, exception));
+						errorHandler.warning(new NotURIException("href",
+								startLine, startColumn, exception));
 					}
 				}
 				break;
@@ -340,7 +271,8 @@ public class RDFaParser implements ContentHandler {
 						// Failed profile causes all subsequent elements
 						// to be ignored!
 						errorHandler.fatalError(new ProfileLoadException(
-								profileURI, line, column, exception));
+								profileURI, "profile", startLine, startColumn,
+								exception));
 						context.setProfileFailed(true);
 						break;
 					}
@@ -348,7 +280,7 @@ public class RDFaParser implements ContentHandler {
 			} else {
 				// Can not continue processing
 				errorHandler.fatalError(new ProfileHandlerNotDefinedException(
-						profile[0], line, column));
+						profile[0], "profile", startLine, startColumn));
 				context.setProfileFailed(true);
 			}
 		}
@@ -366,7 +298,8 @@ public class RDFaParser implements ContentHandler {
 				try {
 					context.registerPrefix(pm.getPrefix(), pm.getURI());
 				} catch (Exception exception) {
-					errorHandler.warning(new NotURIException(pm.getqName(), line, column, exception));
+					errorHandler.warning(new NotURIException(pm.getqName(),
+							startLine, startColumn, exception));
 				}
 			}
 
@@ -375,7 +308,8 @@ public class RDFaParser implements ContentHandler {
 				try {
 					context.registerPrefix(pm.getPrefix(), pm.getURI());
 				} catch (Exception exception) {
-					errorHandler.warning(new NotURIException(pm.getqName(), line, column, exception));
+					errorHandler.warning(new NotURIException(pm.getqName(),
+							startLine, startColumn, exception));
 				}
 			}
 
@@ -383,11 +317,11 @@ public class RDFaParser implements ContentHandler {
 				try {
 					Component datatypeURI = context
 							.expandTERMorCURIEorAbsURI(datatype);
-					datatypeURI.setLocation(line, column);
+					datatypeURI.setLocation(startLine, startColumn);
 					context.setDatatype(datatypeURI);
 				} catch (Exception exception) {
 					errorHandler.warning(new NotTERMorCURIEorAbsURIException(
-							"datatype", line, column, exception));
+							"datatype", startLine, startColumn, exception));
 				}
 			}
 
@@ -401,42 +335,42 @@ public class RDFaParser implements ContentHandler {
 					// by using the URI from @about, if present
 					try {
 						Component aboutURI = context.expandCURIEorURI(about);
-						aboutURI.setLocation(line, column);
+						aboutURI.setLocation(startLine, startColumn);
 						context.setNewSubject(aboutURI);
 					} catch (Exception exception) {
 						errorHandler.warning(new NotCURIEorURIException(
-								"about", line, column, exception));
+								"about", startLine, startColumn, exception));
 					}
 				} else if (src != null) {
 					// otherwise, by using the URI from @src, if present
 					try {
 						Component srcURI = context.expandURI(src);
-						srcURI.setLocation(line, column);
+						srcURI.setLocation(startLine, startColumn);
 						context.setNewSubject(srcURI);
 					} catch (Exception exception) {
-						errorHandler.warning(new NotURIException("src", line,
-								column, exception));
+						errorHandler.warning(new NotURIException("src",
+								startLine, startColumn, exception));
 					}
 				} else if (resource != null) {
 					// otherwise, by using the URI from @resource, if present
 					try {
 						Component resourceURI = context
 								.expandCURIEorURI(resource);
-						resourceURI.setLocation(line, column);
+						resourceURI.setLocation(startLine, startColumn);
 						context.setNewSubject(resourceURI);
 					} catch (Exception exception) {
 						errorHandler.warning(new NotCURIEorURIException(
-								"resource", line, column, exception));
+								"resource", startLine, startColumn, exception));
 					}
 				} else if (href != null) {
 					// otherwise, by using the URI from @href, if present
 					try {
 						Component hrefURI = context.expandURI(href);
-						hrefURI.setLocation(line, column);
+						hrefURI.setLocation(startLine, startColumn);
 						context.setNewSubject(hrefURI);
 					} catch (Exception exception) {
-						errorHandler.warning(new NotURIException("href", line,
-								column, exception));
+						errorHandler.warning(new NotURIException("href",
+								startLine, startColumn, exception));
 					}
 				} else if (depth == 2) {
 					// if no URI is provided by a resource attribute, then
@@ -446,11 +380,11 @@ public class RDFaParser implements ContentHandler {
 					// for @about.
 					try {
 						Component aboutURI = context.expandCURIEorURI("");
-						aboutURI.setLocation(line, column);
+						aboutURI.setLocation(startLine, startColumn);
 						context.setNewSubject(aboutURI);
 					} catch (Exception exception) {
 						errorHandler.warning(new NotCURIEorURIException(
-								"about", line, column, exception));
+								"about", startLine, startColumn, exception));
 					}
 				}
 
@@ -463,7 +397,7 @@ public class RDFaParser implements ContentHandler {
 						// a
 						// newly created bnode
 						context.setNewSubject(new Component(context
-								.generateBlankNode(), line, column));
+								.generateBlankNode(), startLine, startColumn));
 					} else {
 						// otherwise, if parent object is present, new subject
 						// is
@@ -489,21 +423,21 @@ public class RDFaParser implements ContentHandler {
 					// by using the URI from @about, if present
 					try {
 						Component aboutURI = context.expandCURIEorURI(about);
-						aboutURI.setLocation(line, column);
+						aboutURI.setLocation(startLine, startColumn);
 						context.setNewSubject(aboutURI);
 					} catch (Exception exception) {
 						errorHandler.warning(new NotCURIEorURIException(
-								"about", line, column, exception));
+								"about", startLine, startColumn, exception));
 					}
 				} else if (src != null) {
 					// otherwise, by using the URI from @src, if present
 					try {
 						Component srcURI = context.expandURI(src);
-						srcURI.setLocation(line, column);
+						srcURI.setLocation(startLine, startColumn);
 						context.setNewSubject(srcURI);
 					} catch (Exception exception) {
-						errorHandler.warning(new NotURIException("src", line,
-								column, exception));
+						errorHandler.warning(new NotURIException("src",
+								startLine, startColumn, exception));
 					}
 				} else if (depth == 2) {
 					// if no URI is provided by a resource attribute, then
@@ -513,11 +447,11 @@ public class RDFaParser implements ContentHandler {
 					// for @about.
 					try {
 						Component aboutURI = context.expandCURIEorURI("");
-						aboutURI.setLocation(line, column);
+						aboutURI.setLocation(startLine, startColumn);
 						context.setNewSubject(aboutURI);
 					} catch (Exception exception) {
 						errorHandler.warning(new NotCURIEorURIException(
-								"about", line, column, exception));
+								"about", startLine, startColumn, exception));
 					}
 				}
 
@@ -530,7 +464,7 @@ public class RDFaParser implements ContentHandler {
 						// a
 						// newly created bnode;
 						context.setNewSubject(new Component(context
-								.generateBlankNode(), line, column));
+								.generateBlankNode(), startLine, startColumn));
 					} else if (context.getParentObject() != null) {
 						// otherwise, if parent object is present, new subject
 						// is
@@ -546,21 +480,21 @@ public class RDFaParser implements ContentHandler {
 					try {
 						Component resourceURI = context
 								.expandCURIEorURI(resource);
-						resourceURI.setLocation(line, column);
+						resourceURI.setLocation(startLine, startColumn);
 						context.setCurrentObjectResource(resourceURI);
 					} catch (Exception exception) {
 						errorHandler.warning(new NotCURIEorURIException(
-								"resource", line, column, exception));
+								"resource", startLine, startColumn, exception));
 					}
 				} else if (href != null) {
 					// otherwise, by using the URI from @href, if present
 					try {
 						Component hrefURI = context.expandURI(href);
-						hrefURI.setLocation(line, column);
+						hrefURI.setLocation(startLine, startColumn);
 						context.setCurrentObjectResource(hrefURI);
 					} catch (Exception exception) {
-						errorHandler.warning(new NotURIException("href", line,
-								column, exception));
+						errorHandler.warning(new NotURIException("href",
+								startLine, startColumn, exception));
 					}
 				}
 			}
@@ -580,14 +514,15 @@ public class RDFaParser implements ContentHandler {
 					try {
 						Component typeURI = context
 								.expandTERMorCURIEorAbsURI(type);
-						typeURI.setLocation(line, column);
+						typeURI.setLocation(startLine, startColumn);
 						tripleSink.generateTriple(context.getNewSubject(),
-								new Component(RDF_NS + "type", line, column),
-								typeURI);
+								new Component(RDF_NS + "type", startLine,
+										startColumn), typeURI);
 					} catch (URISyntaxException exception) {
 						errorHandler
 								.warning(new NotTERMorCURIEorAbsURIException(
-										"typeof", line, column, exception));
+										"typeof", startLine, startColumn,
+										exception));
 					}
 				}
 			}
@@ -606,14 +541,15 @@ public class RDFaParser implements ContentHandler {
 						try {
 							Component predicateURI = context
 									.expandTERMorCURIEorAbsURI(predicate);
-							predicateURI.setLocation(line, column);
+							predicateURI.setLocation(startLine, startColumn);
 							tripleSink.generateTriple(context.getNewSubject(),
 									predicateURI,
 									context.getCurrentObjectResource());
 						} catch (URISyntaxException exception) {
 							errorHandler
 									.warning(new NotTERMorCURIEorAbsURIException(
-											"rel", line, column, exception));
+											"rel", startLine, startColumn,
+											exception));
 						}
 					}
 				}
@@ -626,14 +562,15 @@ public class RDFaParser implements ContentHandler {
 						try {
 							Component predicateURI = context
 									.expandTERMorCURIEorAbsURI(predicate);
-							predicateURI.setLocation(line, column);
+							predicateURI.setLocation(startLine, startColumn);
 							tripleSink.generateTriple(
 									context.getCurrentObjectResource(),
 									predicateURI, context.getNewSubject());
 						} catch (URISyntaxException exception) {
 							errorHandler
 									.warning(new NotTERMorCURIEorAbsURIException(
-											"rev", line, column, exception));
+											"rev", startLine, startColumn,
+											exception));
 						}
 					}
 				}
@@ -656,13 +593,14 @@ public class RDFaParser implements ContentHandler {
 						try {
 							Component predicateURI = context
 									.expandTERMorCURIEorAbsURI(predicate);
-							predicateURI.setLocation(line, column);
+							predicateURI.setLocation(startLine, startColumn);
 							incompleteTriples.add(new IncompleteTriple(
 									predicateURI, false));
 						} catch (URISyntaxException exception) {
 							errorHandler
 									.warning(new NotTERMorCURIEorAbsURIException(
-											"rel", line, column, exception));
+											"rel", startLine, startColumn,
+											exception));
 						}
 					}
 				}
@@ -676,13 +614,14 @@ public class RDFaParser implements ContentHandler {
 						try {
 							Component predicateURI = context
 									.expandTERMorCURIEorAbsURI(predicate);
-							predicateURI.setLocation(line, column);
+							predicateURI.setLocation(startLine, startColumn);
 							incompleteTriples.add(new IncompleteTriple(
 									predicateURI, true));
 						} catch (URISyntaxException exception) {
 							errorHandler
 									.warning(new NotTERMorCURIEorAbsURIException(
-											"rev", line, column, exception));
+											"rev", startLine, startColumn,
+											exception));
 						}
 					}
 				}
@@ -690,7 +629,7 @@ public class RDFaParser implements ContentHandler {
 					context.setLocalIncompleteTriples(incompleteTriples);
 				}
 				context.setCurrentObjectResource(new Component(context
-						.generateBlankNode(), line, column));
+						.generateBlankNode(), startLine, startColumn));
 			}
 
 			if (context.getProperty() != null) {
@@ -714,8 +653,12 @@ public class RDFaParser implements ContentHandler {
 	 * @see org.xml.sax.ContentHandler#endElement(java.lang.String,
 	 * java.lang.String, java.lang.String)
 	 */
-	public void endRDFaElement(String uri, String localName, String qName)
-			throws SAXException {
+	public void endRDFaElement(String uri, String localName, String qName) {
+		// XML Literal handling
+		if (literalCollector.collectCloseElement(uri, localName, qName) == true) {
+			return;
+		}
+
 		// 11.
 		if (context.isProfileFailed() == false) {
 			if (context.getProperty() != null) {
@@ -737,8 +680,9 @@ public class RDFaParser implements ContentHandler {
 					if (context.getContent() != null) {
 						// The actual literal is either the value of
 						// @content (if present)
-						lexical = new Lexical(context.getContent(), line,
-								column);
+						lexical = new Lexical(context.getContent(),
+								context.getBeginTagStartLine(),
+								context.getBeginTagStartColumn());
 					} else {
 						// or a string created by concatenating the
 						// value of all descendant text nodes
@@ -843,93 +787,14 @@ public class RDFaParser implements ContentHandler {
 		depth--;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.xml.sax.ContentHandler#startElement(java.lang.String,
-	 * java.lang.String, java.lang.String, org.xml.sax.Attributes)
+	/**
+	 * @param ch
+	 * @param start
+	 * @param length
+	 * @param line
+	 * @param column
 	 */
-	@Override
-	public void startElement(String uri, String localName, String qName,
-			Attributes atts) throws SAXException {
-		if (literalCollector.collectStartElement(uri, localName, qName, atts) == false) {
-			beginRDFaElement(uri, localName, qName, atts);
-		}
-		saveLocation();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.xml.sax.ContentHandler#endElement(java.lang.String,
-	 * java.lang.String, java.lang.String)
-	 */
-	@Override
-	public void endElement(String uri, String localName, String qName)
-			throws SAXException {
-		// XML Literal handling
-		if (literalCollector.collectCloseElement(uri, localName, qName) == false) {
-			endRDFaElement(uri, localName, qName);
-		}
-		saveLocation();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.xml.sax.ContentHandler#characters(char[], int, int)
-	 */
-	@Override
-	public void characters(char[] ch, int start, int length)
-			throws SAXException {
-		// Capture text content for plain literal
+	public void writeLiteral(char[] ch, int start, int length, long line, long column) {
 		literalCollector.collect(ch, start, length, true);
-		saveLocation();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.xml.sax.ContentHandler#ignorableWhitespace(char[], int, int)
-	 */
-	@Override
-	public void ignorableWhitespace(char[] ch, int start, int length)
-			throws SAXException {
-		// Whitespace
-		characters(ch, start, length);
-		saveLocation();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.xml.sax.ContentHandler#processingInstruction(java.lang.String,
-	 * java.lang.String)
-	 */
-	@Override
-	public void processingInstruction(String target, String data)
-			throws SAXException {
-		// Processing instruction
-		saveLocation();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.xml.sax.ContentHandler#skippedEntity(java.lang.String)
-	 */
-	@Override
-	public void skippedEntity(String name) throws SAXException {
-		// Skipped entity
-		saveLocation();
-	}
-
-	/*
-	 * Save current location
-	 */
-	private void saveLocation() {
-		// Save current location
-		line = locator.getLineNumber();
-		column = locator.getColumnNumber();
 	}
 }

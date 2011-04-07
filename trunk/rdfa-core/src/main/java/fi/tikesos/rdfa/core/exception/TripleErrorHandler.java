@@ -20,21 +20,39 @@ import fi.tikesos.rdfa.core.exception.ErrorHandler;
 import fi.tikesos.rdfa.core.triple.TripleSink;
 
 public class TripleErrorHandler implements ErrorHandler {
+	public final String RDFA_PROCESSOR_NS = "http://tikesos.fi/processor/rdfa#";
+	public final String RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
+	private long exceptionCount;
 	private TripleSink tripleSink;
-	
+
 	public TripleErrorHandler(TripleSink tripleSink) {
 		this.tripleSink = tripleSink;
+		this.exceptionCount = 1;
 	}
-	
+
+	private void generateRDFaExceptionTriple(String exceptionType,
+			RDFaException exception) {
+		String subject = RDFA_PROCESSOR_NS + "exception_" + exceptionCount;
+		tripleSink.generateTriple(subject, RDF_NS + "type", RDFA_PROCESSOR_NS + exceptionType);
+		tripleSink.generateTriple(subject, RDFA_PROCESSOR_NS + "type", RDFA_PROCESSOR_NS + exception.getClass().getSimpleName());
+		tripleSink.generateTripleLiteral(subject, RDFA_PROCESSOR_NS + "elementName", exception.getElementName(), null, null);
+		tripleSink.generateTripleLiteral(subject, RDFA_PROCESSOR_NS + "message", exception.getMessage(), null, null);
+		tripleSink.generateTripleLiteral(subject, RDFA_PROCESSOR_NS + "lineNumber", String.valueOf(exception.getLine()), null, null);
+		tripleSink.generateTripleLiteral(subject, RDFA_PROCESSOR_NS + "columnNumber", String.valueOf(exception.getColumn()), null, null);
+		this.exceptionCount++;
+	}
+
 	@Override
 	public void warning(Exception exception) {
-		// Generate a triple from exception
-		exception.printStackTrace();
+		if (exception instanceof RDFaException) {
+			generateRDFaExceptionTriple("warning", (RDFaException) exception);
+		}
 	}
 
 	@Override
 	public void fatalError(Exception exception) {
-		// Generate a triple from exception
-		exception.printStackTrace();
+		if (exception instanceof RDFaException) {
+			generateRDFaExceptionTriple("fatalError", (RDFaException) exception);
+		}
 	}
 }
