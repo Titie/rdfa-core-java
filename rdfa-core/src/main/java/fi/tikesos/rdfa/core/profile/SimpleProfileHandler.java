@@ -30,6 +30,7 @@ import fi.tikesos.rdfa.core.datatype.Language;
 import fi.tikesos.rdfa.core.datatype.Lexical;
 import fi.tikesos.rdfa.core.exception.NullErrorHandler;
 import fi.tikesos.rdfa.core.parser.RDFaParser;
+import fi.tikesos.rdfa.core.parser.SAXRDFaParser;
 import fi.tikesos.rdfa.core.triple.TripleSink;
 import fi.tikesos.rdfa.core.util.NullEntityResolver;
 
@@ -41,20 +42,20 @@ import fi.tikesos.rdfa.core.util.NullEntityResolver;
  */
 public class SimpleProfileHandler implements ProfileHandler {
 	private Map<String, Profile> profileCache = new HashMap<String, Profile>();
-	
+
 	public Profile loadProfile(String profileURI) throws Exception {
 		Profile profile = profileCache.get(profileURI);
 		if (profile == null) {
 			XMLReader reader = XMLReaderFactory.createXMLReader();
 			ProfileTripleSink profileTripleSink = new ProfileTripleSink();
-			RDFaParser parser = new RDFaParser(profileURI, profileTripleSink,
+			SAXRDFaParser parser = new SAXRDFaParser(profileURI, profileTripleSink,
 					null, new NullErrorHandler(), RDFaParser.XML_RDFA);
 
 			reader.setFeature("http://xml.org/sax/features/validation",
 					Boolean.FALSE);
 			reader.setFeature("http://xml.org/sax/features/namespace-prefixes",
 					Boolean.TRUE);
-			
+
 			reader.setContentHandler(parser);
 			reader.setEntityResolver(new NullEntityResolver());
 			reader.parse(new InputSource(new URI(profileURI).toURL()
@@ -73,7 +74,7 @@ public class SimpleProfileHandler implements ProfileHandler {
 	 * Profile implementation for SimpleProfileLoader
 	 * 
 	 * @author ssakorho
-	 *
+	 * 
 	 */
 	private class SimpleProfile implements Profile {
 		private String defaultVocabulary;
@@ -119,7 +120,11 @@ public class SimpleProfileHandler implements ProfileHandler {
 	 * TripleSink implementation for SimpleProfileLoader
 	 * 
 	 * @author ssakorho
-	 *
+	 * 
+	 */
+	/**
+	 * @author ssakorho
+	 * 
 	 */
 	private class ProfileTripleSink implements TripleSink {
 		private final static String RDFA_NS = "http://www.w3.org/ns/rdfa#";
@@ -169,28 +174,48 @@ public class SimpleProfileHandler implements ProfileHandler {
 			return prefixMappings;
 		}
 
-		/* (non-Javadoc)
-		 * @see fi.tikesos.rdfa.core.triple.TripleSink#startRelativeTripleCaching()
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see
+		 * fi.tikesos.rdfa.core.triple.TripleSink#startRelativeTripleCaching()
 		 */
 		public void startRelativeTripleCaching() {
 		}
 
-		/* (non-Javadoc)
-		 * @see fi.tikesos.rdfa.core.triple.TripleSink#stopRelativeTripleCaching()
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see
+		 * fi.tikesos.rdfa.core.triple.TripleSink#stopRelativeTripleCaching()
 		 */
 		public void stopRelativeTripleCaching() {
 		}
-		
-		/* (non-Javadoc)
-		 * @see fi.tikesos.rdfa.core.triple.TripleSink#generateTriple(fi.tikesos.rdfa.core.datatype.Component, fi.tikesos.rdfa.core.datatype.Component, fi.tikesos.rdfa.core.datatype.Component)
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see
+		 * fi.tikesos.rdfa.core.triple.TripleSink#generateTriple(fi.tikesos.
+		 * rdfa.core.datatype.Component,
+		 * fi.tikesos.rdfa.core.datatype.Component,
+		 * fi.tikesos.rdfa.core.datatype.Component)
 		 */
 		public void generateTriple(Component subject, Component predicate,
 				Component object) {
 			// Ignored
 		}
 
-		/* (non-Javadoc)
-		 * @see fi.tikesos.rdfa.core.triple.TripleSink#generateTripleLiteral(fi.tikesos.rdfa.core.datatype.Component, fi.tikesos.rdfa.core.datatype.Component, fi.tikesos.rdfa.core.datatype.Lexical, fi.tikesos.rdfa.core.datatype.Language, fi.tikesos.rdfa.core.datatype.Component)
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see
+		 * fi.tikesos.rdfa.core.triple.TripleSink#generateTripleLiteral(fi.tikesos
+		 * .rdfa.core.datatype.Component,
+		 * fi.tikesos.rdfa.core.datatype.Component,
+		 * fi.tikesos.rdfa.core.datatype.Lexical,
+		 * fi.tikesos.rdfa.core.datatype.Language,
+		 * fi.tikesos.rdfa.core.datatype.Component)
 		 */
 		public void generateTripleLiteral(Component subject,
 				Component predicate, Lexical lexical, Language language,
@@ -215,6 +240,24 @@ public class SimpleProfileHandler implements ProfileHandler {
 				}
 				valueMap.put(type, lexical.getValue());
 			}
+		}
+
+		/* (non-Javadoc)
+		 * @see fi.tikesos.rdfa.core.triple.TripleSink#generateTriple(java.lang.String, java.lang.String, java.lang.String)
+		 */
+		public void generateTriple(String subject, String predicate,
+				String object) {
+			// NOT IMPLEMENTED
+			throw new UnsupportedOperationException();
+		}
+
+		/* (non-Javadoc)
+		 * @see fi.tikesos.rdfa.core.triple.TripleSink#generateTripleLiteral(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
+		 */
+		public void generateTripleLiteral(String subject, String predicate,
+				String lexical, String language, String datatype) {
+			// NOT IMPLEMENTED
+			throw new UnsupportedOperationException();
 		}
 	}
 }

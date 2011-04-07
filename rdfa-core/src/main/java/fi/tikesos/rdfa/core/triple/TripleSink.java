@@ -30,5 +30,7 @@ public interface TripleSink {
 	public void startRelativeTripleCaching();
 	public void stopRelativeTripleCaching();
 	public void generateTriple(Component subject, Component predicate, Component object);
+	public void generateTriple(String subject, String predicate, String object);
 	public void generateTripleLiteral(Component subject, Component predicate, Lexical lexical, Language language, Component datatype);
+	public void generateTripleLiteral(String subject, String predicate, String lexical, String language, String datatype);
 }

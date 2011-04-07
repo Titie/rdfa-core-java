@@ -25,26 +25,17 @@ package fi.tikesos.rdfa.core.exception;
  */
 public class NotURIException extends RDFaException {
 	private static final long serialVersionUID = 1L;
-	private String uri;
 	
 	/**
 	 * Constructor
 	 * 
-	 * @param uri
+	 * @param elementName
 	 * @param line
 	 * @param column
 	 * @param cause
 	 */
-	public NotURIException(String uri, long line, long column,
+	public NotURIException(String elementName, long line, long column,
 			Throwable cause) {
-		super(cause, line, column);
-		this.uri = uri;
-	}
-	
-	/**
-	 * @return
-	 */
-	public String getURI() {
-		return uri;
+		super(elementName, cause, line, column);
 	}
 }

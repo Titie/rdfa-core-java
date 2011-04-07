@@ -35,10 +35,9 @@ public class ProfileHandlerNotDefinedException extends RDFaException {
 	 * @param line
 	 * @param column
 	 */
-	public ProfileHandlerNotDefinedException(String profileURI, long line,
+	public ProfileHandlerNotDefinedException(String profileURI, String elementName, long line,
 			long column) {
-		super(line, column);
-		this.profileURI = profileURI;
+		super(elementName, line, column);
 	}
 	
 	/**
