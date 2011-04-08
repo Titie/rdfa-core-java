@@ -75,7 +75,7 @@ public class RDFaReader implements RDFReader {
 				TripleSink sink = new JenaTripleSink(model);
 				ErrorHandler errorHandler = new TripleErrorHandler(sink);
 				ContentHandler parser = new SAXRDFaParser(base, sink,
-						profileHandler, errorHandler, RDFaParser.XHTML_RDFA);
+						profileHandler, errorHandler, RDFaParser.UNKNOWN_XML);
 				reader.setContentHandler(parser);
 				reader.parse(new InputSource(r));
 			} catch (IOException e) {

@@ -18,24 +18,21 @@ package fi.tikesos.rdfa.core.literal;
 
 import java.util.Stack;
 
-import org.xml.sax.Attributes;
-
+import fi.tikesos.rdfa.core.datatype.Attributes;
 import fi.tikesos.rdfa.core.util.StringEscapeUtils;
-
-
 
 /**
  * Helper class for collecting Literal and XML-Literal values.
  * 
  * @author ssakorho
- *
+ * 
  */
 public class LiteralCollector {
 	private Stack<StringBuffer> literalCollector;
 	private StringBuffer xmlCollector;
 	private boolean ascending;
 	private int xmlCollectorDepth;
-	
+
 	/**
 	 * Class constructor.
 	 */
@@ -45,21 +42,21 @@ public class LiteralCollector {
 		xmlCollectorDepth = 0;
 		ascending = false;
 	}
-	
+
 	/**
 	 * 
 	 */
 	public void startCollecting() {
 		literalCollector.push(new StringBuffer());
 	}
-	
+
 	/**
 	 * 
 	 */
 	public void startCollectingXML() {
 		xmlCollector = new StringBuffer();
 	}
-	
+
 	/**
 	 * @param toCollect
 	 * @param shouldEncode
@@ -77,17 +74,19 @@ public class LiteralCollector {
 		}
 		ascending = false;
 	}
-	
+
 	/**
 	 * @param toCollect
 	 * @param start
 	 * @param length
 	 * @param shouldEncode
 	 */
-	public void collect(char []toCollect, int start, int length, boolean shouldEncode) {
+	public void collect(char[] toCollect, int start, int length,
+			boolean shouldEncode) {
 		if (xmlCollector != null) {
 			if (shouldEncode == true) {
-				StringEscapeUtils.escapeXML(toCollect, start, length, xmlCollector);
+				StringEscapeUtils.escapeXML(toCollect, start, length,
+						xmlCollector);
 			} else {
 				xmlCollector.append(toCollect, start, length);
 			}
@@ -97,21 +96,21 @@ public class LiteralCollector {
 		}
 		ascending = false;
 	}
-	
+
 	/**
 	 * @return
 	 */
 	public boolean isCollectingXML() {
 		return xmlCollector != null && xmlCollectorDepth > 0;
 	}
-	
+
 	/**
 	 * @return
 	 */
 	public boolean isCollecting() {
 		return literalCollector.isEmpty() == false || xmlCollector != null;
 	}
-	
+
 	/**
 	 * @return
 	 */
@@ -126,10 +125,10 @@ public class LiteralCollector {
 			collected = xmlCollector.toString();
 			xmlCollector = null;
 		}
-		
+
 		return collected;
 	}
-	
+
 	/**
 	 * @param uri
 	 * @param localName
@@ -137,16 +136,17 @@ public class LiteralCollector {
 	 * @param atts
 	 * @return
 	 */
-	public boolean collectStartElement(String uri, String localName, String qName, Attributes atts) {
+	public boolean collectStartElement(String uri, String localName,
+			String qName, Attributes atts) {
 		boolean result = false;
 		if (xmlCollector != null) {
 			xmlCollector.append("<");
 			xmlCollector.append(qName);
-			for (int i = 0;i < atts.getLength();i++) {
+			for (int i = 0; i < atts.getCount(); i++) {
 				xmlCollector.append(" ");
 				xmlCollector.append(atts.getQName(i));
 				xmlCollector.append("=\"");
-				StringEscapeUtils.escapeXML(atts.getValue(i), xmlCollector); 
+				StringEscapeUtils.escapeXML(atts.getValue(i), xmlCollector);
 				xmlCollector.append("\"");
 			}
 			xmlCollector.append(">");
@@ -154,7 +154,7 @@ public class LiteralCollector {
 			result = true;
 		}
 		ascending = true;
-		
+
 		return result;
 	}
 
@@ -164,7 +164,8 @@ public class LiteralCollector {
 	 * @param qName
 	 * @return
 	 */
-	public boolean collectCloseElement(String uri, String localName, String qName) {
+	public boolean collectCloseElement(String uri, String localName,
+			String qName) {
 		boolean result = false;
 		if (xmlCollector != null && xmlCollectorDepth > 0) {
 			if (ascending == true) {
@@ -181,7 +182,7 @@ public class LiteralCollector {
 			result = true;
 		}
 		ascending = false;
-		
+
 		return result;
 	}
 }

@@ -21,13 +21,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
-import org.xml.sax.Attributes;
-
+import fi.tikesos.rdfa.core.datatype.Attributes;
 import fi.tikesos.rdfa.core.datatype.IncompleteTriple;
 import fi.tikesos.rdfa.core.datatype.Component;
 import fi.tikesos.rdfa.core.datatype.Language;
 import fi.tikesos.rdfa.core.datatype.Lexical;
 import fi.tikesos.rdfa.core.datatype.PrefixMapping;
+import fi.tikesos.rdfa.core.datatype.RDFaAttributes;
 import fi.tikesos.rdfa.core.exception.ErrorHandler;
 import fi.tikesos.rdfa.core.exception.NotCURIEorURIException;
 import fi.tikesos.rdfa.core.exception.NotTERMorCURIEorAbsURIException;
@@ -51,14 +51,14 @@ import fi.tikesos.rdfa.core.literal.LiteralCollector;
  * @version 0.1
  */
 public class RDFaParser {
-	public static final int DYNAMIC = 0;
+	public static final int UNKNOWN_XML = 0;
 	public static final int XHTML_RDFA = 1;
 	public static final int XML_RDFA = 2;
-	private static final String XHTML_PROFILE = "http://www.w3.org/1999/xhtml/vocab";
-	private static final String XHTML_NS = "http://www.w3.org/1999/xhtml";
-	private static final String XML_NS = "http://www.w3.org/XML/1998/namespace";
-	private static final String RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
-	private static final String RDF_XMLLITERAL = RDF_NS + "XMLLiteral";
+	public static final String XHTML_PROFILE = "http://www.w3.org/1999/xhtml/vocab";
+	public static final String XHTML_NS = "http://www.w3.org/1999/xhtml";
+	public static final String XML_NS = "http://www.w3.org/XML/1998/namespace";
+	public static final String RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
+	public static final String RDF_XMLLITERAL = RDF_NS + "XMLLiteral";
 	private int format;
 	private int depth;
 	private boolean lookForBase;
@@ -74,6 +74,8 @@ public class RDFaParser {
 	 * @param base
 	 * @param tripleSink
 	 * @param profileHandler
+	 * @param errorHandler
+	 * @param format
 	 * @throws URISyntaxException
 	 */
 	public RDFaParser(String base, TripleSink tripleSink,
@@ -113,104 +115,46 @@ public class RDFaParser {
 	 * @param uri
 	 * @param localName
 	 * @param qName
-	 * @param atts
+	 * @param attributes
 	 * @throws SAXException
 	 */
 	public void beginRDFaElement(String uri, String localName, String qName,
-			Attributes atts, long startLine, long startColumn, long endLine,
-			long endColumn) {
-		if (literalCollector.collectStartElement(uri, localName, qName, atts) == true) {
+			Attributes attributes, long startLine, long startColumn,
+			long endLine, long endColumn) {
+		if (literalCollector.collectStartElement(uri, localName, qName,
+				attributes) == true) {
 			return;
 		}
-		String[] rel = null;
-		String[] rev = null;
-		String about = null;
-		String resource = null;
-		String src = null;
-		String href = null;
-		String vocab = null;
-		String datatype = null;
-		String[] typeof = null;
-		String[] profile = null;
-		List<PrefixMapping> prefixList = new ArrayList<PrefixMapping>();
-		List<PrefixMapping> xmlnsList = new ArrayList<PrefixMapping>();
 
-		// create new evaluation context
+		// Create new evaluation context
 		depth++;
 		context = new ProcessingContext(context, startLine, startColumn,
 				endLine, endColumn);
 
 		// Process attributes
-		for (int i = 0; i < atts.getLength(); i++) {
-			String attributeQName = atts.getQName(i);
-			if ("vocab".equals(attributeQName) == true) {
-				// 2.
-				// @vocab
-				vocab = atts.getValue(i);
-			} else if ("profile".equals(attributeQName) == true) {
-				// @profile
-				profile = atts.getValue(i).trim().split("\\s");
-			} else if ("prefix".equals(attributeQName) == true) {
-				// @prefix
-				String[] prefix = atts.getValue(i).trim().split("\\s+");
-				for (int n = 0; n < prefix.length; n += 2) {
-					if (prefix[n].endsWith(":") == true) {
-						prefixList.add(new PrefixMapping(attributeQName,
-								prefix[n].substring(0, prefix[n].length() - 1),
-								prefix[n + 1]));
-					} // Else exception?
-				}
-			} else if (attributeQName.startsWith("xmlns:")) {
-				// @xmlns:*
-				xmlnsList.add(new PrefixMapping(attributeQName, attributeQName
-						.substring(6), atts.getValue(i)));
-			} else if ("lang".equals(attributeQName) == true
-					|| (XML_NS.equals(atts.getURI(i)) == true && "lang"
-							.equals(atts.getLocalName(i)) == true)) {
-				// @lang or @xml:lang
-				context.setLanguage(atts.getValue(i));
-			} else if ("rev".equals(attributeQName) == true) {
-				// @rev
-				rev = atts.getValue(i).trim().split("\\s+");
-			} else if ("rel".equals(attributeQName) == true) {
-				// @rel
-				rel = atts.getValue(i).trim().split("\\s+");
-			} else if ("about".equals(attributeQName) == true) {
-				// @about
-				about = atts.getValue(i);
-			} else if ("src".equals(attributeQName) == true) {
-				// @src
-				src = atts.getValue(i);
-			} else if ("href".equals(attributeQName) == true) {
-				// @href
-				href = atts.getValue(i);
-			} else if ("typeof".equals(attributeQName) == true) {
-				// @typeof
-				typeof = atts.getValue(i).trim().split("\\s+");
-			} else if ("property".equals(attributeQName) == true) {
-				// @property
-				context.setProperty(atts.getValue(i).trim().split("\\s+"));
-			} else if ("resource".equals(attributeQName) == true) {
-				// @resource
-				resource = atts.getValue(i);
-			} else if ("content".equals(attributeQName) == true) {
-				// @content
-				context.setContent(atts.getValue(i));
-			} else if ("datatype".equals(attributeQName) == true) {
-				// @datatype
-				datatype = atts.getValue(i);
-			} else if (depth == 1 && "xmlns".equals(attributeQName) == true
-					&& format == DYNAMIC) {
-				if (XHTML_NS.equals(atts.getValue(i)) == true) {
-					// XHTML+RDFa extension
-					format = XHTML_RDFA;
-					lookForBase = true;
-				} else {
-					// XML-RDFa core
-					format = XML_RDFA;
-					lookForBase = false;
-				}
+		RDFaAttributes rdfaAttributes = new RDFaAttributes(attributes);
+		if (depth == 1 && format == UNKNOWN_XML) {
+			if (XHTML_NS.equals(rdfaAttributes.getDefaultXmlns()) == true) {
+				// XHTML+RDFa extension
+				format = XHTML_RDFA;
+				lookForBase = true;
+			} else {
+				// XML-RDFa core
+				format = XML_RDFA;
+				lookForBase = false;
 			}
+		}
+		if (rdfaAttributes.getLang() != null) {
+			// Set language
+			context.setLanguage(rdfaAttributes.getLang());
+		}
+		if (rdfaAttributes.getProperty() != null) {
+			// Set property
+			context.setProperty(rdfaAttributes.getProperty());
+		}
+		if (rdfaAttributes.getContent() != null) {
+			// Set content
+			context.setContent(rdfaAttributes.getContent());
 		}
 
 		if (format == XHTML_RDFA) {
@@ -251,7 +195,7 @@ public class RDFaParser {
 						&& XHTML_NS.equals(uri) == true) {
 					// Set base to @href
 					try {
-						context.setBase(href);
+						context.setBase(rdfaAttributes.getHref());
 					} catch (Exception exception) {
 						errorHandler.warning(new NotURIException("href",
 								startLine, startColumn, exception));
@@ -261,10 +205,10 @@ public class RDFaParser {
 			}
 		}
 
-		if (profile != null) {
+		if (rdfaAttributes.getProfile() != null) {
 			// Load profiles
 			if (profileHandler != null) {
-				for (String profileURI : profile) {
+				for (String profileURI : rdfaAttributes.getProfile()) {
 					try {
 						processProfile(profileHandler.loadProfile(profileURI));
 					} catch (Exception exception) {
@@ -280,7 +224,8 @@ public class RDFaParser {
 			} else {
 				// Can not continue processing
 				errorHandler.fatalError(new ProfileHandlerNotDefinedException(
-						profile[0], "profile", startLine, startColumn));
+						rdfaAttributes.getProfile()[0], "profile", startLine,
+						startColumn));
 				context.setProfileFailed(true);
 			}
 		}
@@ -289,34 +234,26 @@ public class RDFaParser {
 		// to be ignored!
 		if (context.isProfileFailed() == false) {
 			// Set vocabulary
-			if (vocab != null) {
-				context.setVocabulary(vocab.isEmpty() == true ? null : vocab);
+			if (rdfaAttributes.getVocab() != null) {
+				context.setVocabulary(rdfaAttributes.getVocab().isEmpty() == true ? null
+						: rdfaAttributes.getVocab());
 			}
 
 			// Register namespace mappings defined at @xmlns:*
-			for (PrefixMapping pm : xmlnsList) {
-				try {
-					context.registerPrefix(pm.getPrefix(), pm.getURI());
-				} catch (Exception exception) {
-					errorHandler.warning(new NotURIException(pm.getqName(),
-							startLine, startColumn, exception));
-				}
+			for (PrefixMapping pm : rdfaAttributes.getXmlns()) {
+				context.registerPrefix(pm.getPrefix(), pm.getURI());
 			}
 
 			// Register namespace mappings defined at @prefix
-			for (PrefixMapping pm : prefixList) {
-				try {
-					context.registerPrefix(pm.getPrefix(), pm.getURI());
-				} catch (Exception exception) {
-					errorHandler.warning(new NotURIException(pm.getqName(),
-							startLine, startColumn, exception));
-				}
+			for (PrefixMapping pm : rdfaAttributes.getPrefix()) {
+				context.registerPrefix(pm.getPrefix(), pm.getURI());
 			}
 
-			if (datatype != null) {
+			if (rdfaAttributes.getDatatype() != null) {
 				try {
 					Component datatypeURI = context
-							.expandTERMorCURIEorAbsURI(datatype);
+							.expandTERMorCURIEorAbsURI(rdfaAttributes
+									.getDatatype());
 					datatypeURI.setLocation(startLine, startColumn);
 					context.setDatatype(datatypeURI);
 				} catch (Exception exception) {
@@ -325,47 +262,51 @@ public class RDFaParser {
 				}
 			}
 
-			if (rev == null && rel == null) {
+			if (rdfaAttributes.getRev() == null
+					&& rdfaAttributes.getRel() == null) {
 				// 6.
 				// If the current element contains no @rel or @rev attribute,
 				// then
 				// the next step is to establish a value for new subject. Any of
 				// the attributes that can carry a resource can set new subject
-				if (about != null) {
+				if (rdfaAttributes.getAbout() != null) {
 					// by using the URI from @about, if present
 					try {
-						Component aboutURI = context.expandCURIEorURI(about);
+						Component aboutURI = context
+								.expandCURIEorURI(rdfaAttributes.getAbout());
 						aboutURI.setLocation(startLine, startColumn);
 						context.setNewSubject(aboutURI);
 					} catch (Exception exception) {
 						errorHandler.warning(new NotCURIEorURIException(
 								"about", startLine, startColumn, exception));
 					}
-				} else if (src != null) {
+				} else if (rdfaAttributes.getSrc() != null) {
 					// otherwise, by using the URI from @src, if present
 					try {
-						Component srcURI = context.expandURI(src);
+						Component srcURI = context.expandURI(rdfaAttributes
+								.getSrc());
 						srcURI.setLocation(startLine, startColumn);
 						context.setNewSubject(srcURI);
 					} catch (Exception exception) {
 						errorHandler.warning(new NotURIException("src",
 								startLine, startColumn, exception));
 					}
-				} else if (resource != null) {
+				} else if (rdfaAttributes.getResource() != null) {
 					// otherwise, by using the URI from @resource, if present
 					try {
 						Component resourceURI = context
-								.expandCURIEorURI(resource);
+								.expandCURIEorURI(rdfaAttributes.getResource());
 						resourceURI.setLocation(startLine, startColumn);
 						context.setNewSubject(resourceURI);
 					} catch (Exception exception) {
 						errorHandler.warning(new NotCURIEorURIException(
 								"resource", startLine, startColumn, exception));
 					}
-				} else if (href != null) {
+				} else if (rdfaAttributes.getHref() != null) {
 					// otherwise, by using the URI from @href, if present
 					try {
-						Component hrefURI = context.expandURI(href);
+						Component hrefURI = context.expandURI(rdfaAttributes
+								.getHref());
 						hrefURI.setLocation(startLine, startColumn);
 						context.setNewSubject(hrefURI);
 					} catch (Exception exception) {
@@ -392,7 +333,7 @@ public class RDFaParser {
 					// If no URI is provided by a resource attribute, then the
 					// first
 					// match from the following rules will apply
-					if (typeof != null) {
+					if (rdfaAttributes.getTypeof() != null) {
 						// if @typeof is present, then new subject is set to be
 						// a
 						// newly created bnode
@@ -419,20 +360,22 @@ public class RDFaParser {
 				// then the next step is to establish both a value for new
 				// subject
 				// and a value for current object resource:
-				if (about != null) {
+				if (rdfaAttributes.getAbout() != null) {
 					// by using the URI from @about, if present
 					try {
-						Component aboutURI = context.expandCURIEorURI(about);
+						Component aboutURI = context
+								.expandCURIEorURI(rdfaAttributes.getAbout());
 						aboutURI.setLocation(startLine, startColumn);
 						context.setNewSubject(aboutURI);
 					} catch (Exception exception) {
 						errorHandler.warning(new NotCURIEorURIException(
 								"about", startLine, startColumn, exception));
 					}
-				} else if (src != null) {
+				} else if (rdfaAttributes.getSrc() != null) {
 					// otherwise, by using the URI from @src, if present
 					try {
-						Component srcURI = context.expandURI(src);
+						Component srcURI = context.expandURI(rdfaAttributes
+								.getSrc());
 						srcURI.setLocation(startLine, startColumn);
 						context.setNewSubject(srcURI);
 					} catch (Exception exception) {
@@ -459,7 +402,7 @@ public class RDFaParser {
 					// If no URI is provided then the first match from the
 					// following
 					// rules will apply:
-					if (typeof != null) {
+					if (rdfaAttributes.getTypeof() != null) {
 						// if @typeof is present, then new subject is set to be
 						// a
 						// newly created bnode;
@@ -475,21 +418,22 @@ public class RDFaParser {
 				// Then the current object resource is set to the URI obtained
 				// from
 				// the first match from the following rules
-				if (resource != null) {
+				if (rdfaAttributes.getResource() != null) {
 					// by using the URI from @resource, if present
 					try {
 						Component resourceURI = context
-								.expandCURIEorURI(resource);
+								.expandCURIEorURI(rdfaAttributes.getResource());
 						resourceURI.setLocation(startLine, startColumn);
 						context.setCurrentObjectResource(resourceURI);
 					} catch (Exception exception) {
 						errorHandler.warning(new NotCURIEorURIException(
 								"resource", startLine, startColumn, exception));
 					}
-				} else if (href != null) {
+				} else if (rdfaAttributes.getHref() != null) {
 					// otherwise, by using the URI from @href, if present
 					try {
-						Component hrefURI = context.expandURI(href);
+						Component hrefURI = context.expandURI(rdfaAttributes
+								.getHref());
 						hrefURI.setLocation(startLine, startColumn);
 						context.setCurrentObjectResource(hrefURI);
 					} catch (Exception exception) {
@@ -499,12 +443,13 @@ public class RDFaParser {
 				}
 			}
 
-			if (context.getNewSubject() != null && typeof != null) {
+			if (context.getNewSubject() != null
+					&& rdfaAttributes.getTypeof() != null) {
 				// 8.
 				// If in any of the previous steps a new subject
 				// was set to a non-null value, it is now used to
 				// provide a subject for type values
-				for (String type : typeof) {
+				for (String type : rdfaAttributes.getTypeof()) {
 					// One or more 'types' for the new subject can
 					// be set by using @typeof. If present, the
 					// attribute must contain one or more URIs,
@@ -532,6 +477,7 @@ public class RDFaParser {
 				// If in any of the previous steps a current object
 				// resource was set to a non-null value, it is now
 				// used to generate triples
+				String[] rel = rdfaAttributes.getRel();
 				if (rel != null && rel.length > 0 && rel[0].isEmpty() == false) {
 					// if present, @rel may contain one or more
 					// URIs, obtained according to the section on
@@ -553,6 +499,7 @@ public class RDFaParser {
 						}
 					}
 				}
+				String[] rev = rdfaAttributes.getRev();
 				if (rev != null && rev.length > 0 && rev[0].isEmpty() == false) {
 					// if present, @rev may contain one or more
 					// URIs, obtained according to the section on
@@ -574,7 +521,8 @@ public class RDFaParser {
 						}
 					}
 				}
-			} else if (rel != null || rev != null) {
+			} else if (rdfaAttributes.getRel() != null
+					|| rdfaAttributes.getRev() != null) {
 				// 10.
 				// If however current object resource was set to null,
 				// but there are predicates present, then they must
@@ -582,6 +530,7 @@ public class RDFaParser {
 				// discovery of a subject that can be used as the
 				// object. Also, current object resource should be set
 				// to a newly created bnode
+				String[] rel = rdfaAttributes.getRel();
 				List<IncompleteTriple> incompleteTriples = new ArrayList<IncompleteTriple>();
 				if (rel != null && rel.length > 0 && rel[0].isEmpty() == false) {
 					// If present, @rel must contain one or more URIs,
@@ -604,6 +553,7 @@ public class RDFaParser {
 						}
 					}
 				}
+				String[] rev = rdfaAttributes.getRev();
 				if (rev != null && rev.length > 0 && rev[0].isEmpty() == false) {
 					// If present, @rel must contain one or more URIs,
 					// obtained according to the section on CURIE and URI
@@ -794,7 +744,8 @@ public class RDFaParser {
 	 * @param line
 	 * @param column
 	 */
-	public void writeLiteral(char[] ch, int start, int length, long line, long column) {
+	public void writeLiteral(char[] ch, int start, int length, long line,
+			long column) {
 		literalCollector.collect(ch, start, length, true);
 	}
 }
