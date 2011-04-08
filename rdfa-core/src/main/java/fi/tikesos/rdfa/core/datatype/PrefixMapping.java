@@ -21,26 +21,16 @@ package fi.tikesos.rdfa.core.datatype;
  *
  */
 public class PrefixMapping {
-	private String qName;
 	private String prefix;
 	private String uri;
 	
 	/**
-	 * @param qName
 	 * @param prefix
 	 * @param uri
 	 */
-	public PrefixMapping(String qName, String prefix, String uri) {
-		this.qName = qName;
+	public PrefixMapping(String prefix, String uri) {
 		this.prefix = prefix;
 		this.uri = uri;
-	}
-	
-	/**
-	 * @return the qName
-	 */
-	public String getqName() {
-		return qName;
 	}
 
 	/**

@@ -7,6 +7,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 
+import fi.tikesos.rdfa.core.datatype.SAXAttributes;
 import fi.tikesos.rdfa.core.exception.ErrorHandler;
 import fi.tikesos.rdfa.core.profile.ProfileHandler;
 import fi.tikesos.rdfa.core.triple.TripleSink;
@@ -89,9 +90,8 @@ public class SAXRDFaParser extends RDFaParser implements ContentHandler {
 	@Override
 	public void startElement(String uri, String localName, String qName,
 			Attributes atts) throws SAXException {
-		beginRDFaElement(uri, localName, qName, atts, line, column,
+		beginRDFaElement(uri, localName, qName, new SAXAttributes(atts), line, column,
 				locator.getLineNumber(), locator.getColumnNumber());
-
 		saveLocation();
 	}
 
