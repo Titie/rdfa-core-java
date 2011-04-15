@@ -19,6 +19,8 @@ package fi.tikesos.rdfa.core.literal;
 import java.util.Stack;
 
 import fi.tikesos.rdfa.core.datatype.Attributes;
+import fi.tikesos.rdfa.core.datatype.Lexical;
+import fi.tikesos.rdfa.core.datatype.Location;
 import fi.tikesos.rdfa.core.util.StringEscapeUtils;
 
 /**
@@ -28,43 +30,45 @@ import fi.tikesos.rdfa.core.util.StringEscapeUtils;
  * 
  */
 public class LiteralCollector {
-	private Stack<StringBuffer> literalCollector;
-	private StringBuffer xmlCollector;
-	private boolean ascending;
+	private Stack<Lexical> literalCollector;
+	private Lexical xmlCollector;
+	private boolean implicitClose;
 	private int xmlCollectorDepth;
 
 	/**
 	 * Class constructor.
 	 */
 	public LiteralCollector() {
-		literalCollector = new Stack<StringBuffer>();
+		literalCollector = new Stack<Lexical>();
 		xmlCollector = null;
 		xmlCollectorDepth = 0;
-		ascending = false;
+		implicitClose = false;
 	}
 
 	/**
 	 * 
 	 */
 	public void startCollecting() {
-		literalCollector.push(new StringBuffer());
+		literalCollector.push(new Lexical());
 	}
 
 	/**
 	 * 
 	 */
 	public void startCollectingXML() {
-		xmlCollector = new StringBuffer();
+		xmlCollector = new Lexical();
 	}
 
 	/**
 	 * @param toCollect
 	 * @param shouldEncode
+	 * @param location
 	 */
-	public void collect(String toCollect, boolean shouldEncode) {
+	public void collect(String toCollect, boolean shouldEncode,
+			Location location) {
 		if (xmlCollector != null) {
 			if (shouldEncode == true) {
-				StringEscapeUtils.escapeXML(toCollect, xmlCollector);
+				StringEscapeUtils.escapeXML(toCollect, xmlCollector.getBuffer());
 			} else {
 				xmlCollector.append(toCollect);
 			}
@@ -72,7 +76,7 @@ public class LiteralCollector {
 		if (literalCollector.isEmpty() == false) {
 			literalCollector.peek().append(toCollect);
 		}
-		ascending = false;
+		implicitClose = false;
 	}
 
 	/**
@@ -80,13 +84,14 @@ public class LiteralCollector {
 	 * @param start
 	 * @param length
 	 * @param shouldEncode
+	 * @param location
 	 */
 	public void collect(char[] toCollect, int start, int length,
-			boolean shouldEncode) {
+			boolean shouldEncode, Location location) {
 		if (xmlCollector != null) {
 			if (shouldEncode == true) {
 				StringEscapeUtils.escapeXML(toCollect, start, length,
-						xmlCollector);
+						xmlCollector.getBuffer());
 			} else {
 				xmlCollector.append(toCollect, start, length);
 			}
@@ -94,7 +99,7 @@ public class LiteralCollector {
 		if (literalCollector.isEmpty() == false) {
 			literalCollector.peek().append(toCollect, start, length);
 		}
-		ascending = false;
+		implicitClose = false;
 	}
 
 	/**
@@ -114,18 +119,17 @@ public class LiteralCollector {
 	/**
 	 * @return
 	 */
-	public String stopCollecting() {
-		String collected = null;
+	public Lexical stopCollecting() {
+		Lexical collected = null;
 		if (xmlCollector == null) {
-			collected = literalCollector.pop().toString();
+			collected = literalCollector.pop();
 			if (literalCollector.empty() == false) {
-				collect(collected, false);
+				collect(collected.getValue(), false, collected.getLocation());
 			}
 		} else {
-			collected = xmlCollector.toString();
+			collected = xmlCollector;
 			xmlCollector = null;
 		}
-
 		return collected;
 	}
 
@@ -134,10 +138,11 @@ public class LiteralCollector {
 	 * @param localName
 	 * @param qName
 	 * @param atts
+	 * @param location
 	 * @return
 	 */
 	public boolean collectStartElement(String uri, String localName,
-			String qName, Attributes atts) {
+			String qName, Attributes atts, Location location) {
 		boolean result = false;
 		if (xmlCollector != null) {
 			xmlCollector.append("<");
@@ -146,14 +151,14 @@ public class LiteralCollector {
 				xmlCollector.append(" ");
 				xmlCollector.append(atts.getQName(i));
 				xmlCollector.append("=\"");
-				StringEscapeUtils.escapeXML(atts.getValue(i), xmlCollector);
+				StringEscapeUtils.escapeXML(atts.getValue(i), xmlCollector.getBuffer());
 				xmlCollector.append("\"");
 			}
 			xmlCollector.append(">");
 			xmlCollectorDepth++;
 			result = true;
 		}
-		ascending = true;
+		implicitClose = true;
 
 		return result;
 	}
@@ -168,7 +173,7 @@ public class LiteralCollector {
 			String qName) {
 		boolean result = false;
 		if (xmlCollector != null && xmlCollectorDepth > 0) {
-			if (ascending == true) {
+			if (implicitClose == true) {
 				// Implicit close
 				xmlCollector.setLength(xmlCollector.length() - 1);
 				xmlCollector.append(" />");
@@ -181,7 +186,7 @@ public class LiteralCollector {
 			xmlCollectorDepth--;
 			result = true;
 		}
-		ascending = false;
+		implicitClose = false;
 
 		return result;
 	}

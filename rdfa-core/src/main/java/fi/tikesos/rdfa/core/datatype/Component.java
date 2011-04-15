@@ -24,9 +24,8 @@ import java.net.URI;
  * @author ssakorho
  * 
  */
-public class Component implements Location {
-	private long line;
-	private long column;
+public class Component {
+	private Location location;
 	private String absoluteURI;
 	private URI currentBaseURI;
 	private URI uri;
@@ -37,15 +36,12 @@ public class Component implements Location {
 	 * 
 	 * @param absoulteURI
 	 *            the absolute uri
-	 * @param line
-	 *            the line value was located on
-	 * @param column
-	 *            the column value was located on
+	 * @param location
+	 *            the location value was located on
 	 */
-	public Component(String absoluteURI, long line, long column) {
+	public Component(String absoluteURI, Location location) {
 		this.absoluteURI = absoluteURI;
-		this.line = line;
-		this.column = column;
+		this.location = location;
 	}
 
 	/**
@@ -86,28 +82,18 @@ public class Component implements Location {
 	}
 
 	/**
-	 * @return the line value was located on
+	 * @return the location value was located on
 	 */
-	public long getLine() {
-		return line;
+	public Location getLocation() {
+		return location;
 	}
 
 	/**
-	 * @return the column value was located on
+	 * @param location
+	 *            the location value was located on
 	 */
-	public long getColumn() {
-		return column;
-	}
-
-	/**
-	 * @param line
-	 *            the line value was located on
-	 * @param column
-	 *            the column value was located on
-	 */
-	public void setLocation(long line, long column) {
-		this.line = line;
-		this.column = column;
+	public void setLocation(Location location) {
+		this.location = location;
 	}
 
 	/**
@@ -133,6 +119,6 @@ public class Component implements Location {
 	 * @return string representation of Component
 	 */
 	public String toString() {
-		return getValue() + " [" + line + ":" + column + "]";
+		return getValue() + " [" + location.toString() + "]";
 	}
 }

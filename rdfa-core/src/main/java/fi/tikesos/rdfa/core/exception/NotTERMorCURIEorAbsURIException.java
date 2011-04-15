@@ -16,6 +16,8 @@
 
 package fi.tikesos.rdfa.core.exception;
 
+import fi.tikesos.rdfa.core.datatype.Location;
+
 /**
  * NotTERMorCURIEorAbsURI is thrown when
  * TERMorCURIEorAbsURI fails to be resolved
@@ -30,13 +32,12 @@ public class NotTERMorCURIEorAbsURIException extends RDFaException {
 	 * Constructor
 	 * 
 	 * @param elementName
-	 * @param line
-	 * @param column
+	 * @param location
 	 * @param cause
 	 */
 	public NotTERMorCURIEorAbsURIException(String elementName,
-			long line, long column,
+			Location location,
 			Throwable cause) {
-		super(elementName, cause, line, column);
+		super(elementName, location, cause);
 	}
 }

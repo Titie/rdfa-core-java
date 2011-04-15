@@ -17,37 +17,37 @@
 package fi.tikesos.rdfa.core.datatype;
 
 /**
- * Language container class.
+ * SAXLocation location
  * 
  * @author ssakorho
  *
  */
-public class Language {
-	private String value;
-	private Location location;
+public class SAXLocation implements Location {
+	private long line;
+	private long column;
 	
 	/**
 	 * Constructor
 	 * 
-	 * @param value
-	 * @param location
+	 * @param line
+	 * @param column
 	 */
-	public Language(String value, Location location) {
-		this.value = value;
-		this.location = location;
+	public SAXLocation(long line, long column) {
+		this.line = line;
+		this.column = column;
 	}
 	
 	/**
 	 * @return
 	 */
-	public String getValue() {
-		return value;
+	public long getLine() {
+		return line;
 	}
 	
 	/**
 	 * @return
 	 */
-	public Location getLocation() {
-		return location;
+	public long getColumn() {
+		return column;
 	}
 }

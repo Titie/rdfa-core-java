@@ -16,6 +16,8 @@
 
 package fi.tikesos.rdfa.core.exception;
 
+import fi.tikesos.rdfa.core.datatype.Location;
+
 /**
  * NotCURIEorURIException is thrown when CURIEorURI
  * fails to be resolved
@@ -30,12 +32,11 @@ public class NotCURIEorURIException extends RDFaException {
 	 * Constructor
 	 * 
 	 * @param elementName
-	 * @param line
-	 * @param column
+	 * @param location
 	 * @param cause
 	 */
-	public NotCURIEorURIException(String elementName, long line, long column,
+	public NotCURIEorURIException(String elementName, Location location,
 			Throwable cause) {
-		super(elementName, cause, line, column);
+		super(elementName, location, cause);
 	}
 }

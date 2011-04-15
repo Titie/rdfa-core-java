@@ -16,6 +16,8 @@
 
 package fi.tikesos.rdfa.core.exception;
 
+import fi.tikesos.rdfa.core.datatype.Location;
+
 /**
  * ProfileLoadException is thrown when profile fails
  * to be read by ProfileHander
@@ -31,13 +33,12 @@ public class ProfileLoadException extends RDFaException {
 	 * Constructor
 	 * 
 	 * @param profileURI
-	 * @param line
-	 * @param column
+	 * @param location
 	 * @param cause
 	 */
-	public ProfileLoadException(String profileURI, String elementName, long line, long column,
+	public ProfileLoadException(String profileURI, String elementName, Location location,
 			Throwable cause) {
-		super(elementName, cause, line, column);
+		super(elementName, location, cause);
 		this.profileURI = profileURI;
 	}
 	

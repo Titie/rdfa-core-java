@@ -22,27 +22,94 @@ package fi.tikesos.rdfa.core.datatype;
  * @author ssakorho
  *
  */
-public class Lexical implements Location {
+public class Lexical {
+	private StringBuffer buffer;
 	private String value;
-	private long line;
-	private long column;
+	private Location location;
 	
-	public Lexical(String value, long line, long column) {
+	/**
+	 * Constructor
+	 */
+	public Lexical() {
+		this.buffer = new StringBuffer();
+		this.location = null;
+		this.value = null;
+	}
+	
+	/**
+	 * Constructor
+	 * 
+	 * @param value
+	 * @param location
+	 */
+	public Lexical(String value, Location location) {
+		this.buffer = null;
+		this.location = location;
 		this.value = value;
-		this.line = line;
-		this.column = column;
 	}
+	
+	/**
+	 * @return
+	 */
 	public String getValue() {
-		return value;
+		return value != null ? value : buffer.toString();
 	}
-	public long getLine() {
-		return line;
+	
+	/**
+	 * @return
+	 */
+	public StringBuffer getBuffer() {
+		return buffer;
 	}
-	public long getColumn() {
-		return column;
+	
+	/**
+	 * @param buffer
+	 */
+	public void append(Lexical lexical) {
+		buffer.append(lexical.getBuffer());
 	}
-	public void setLocation(long line, long column) {
-		this.line = line;
-		this.column = column;
-	}	
+	
+	/**
+	 * @param str
+	 */
+	public void append(String str) {
+		buffer.append(str);
+	}
+	
+	/**
+	 * @param ch
+	 * @param length
+	 * @param offset
+	 */
+	public void append(char[] ch, int start, int length) {
+		buffer.append(ch, start, length);
+	}
+	
+	/**
+	 * @return
+	 */
+	public Location getLocation() {
+		return location;
+	}
+
+	/**
+	 * @param location
+	 */
+	public void setLocation(Location location) {
+		this.location = location;
+	}
+	
+	/**
+	 * @return
+	 */
+	public int length() {
+		return buffer.length();
+	}
+	
+	/**
+	 * @param newLength
+	 */
+	public void setLength(int newLength) {
+		buffer.setLength(newLength);
+	}
 }

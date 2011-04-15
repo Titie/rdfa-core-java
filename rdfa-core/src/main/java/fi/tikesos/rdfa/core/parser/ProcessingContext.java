@@ -25,6 +25,9 @@ import org.apache.xerces.util.XMLChar;
 import fi.tikesos.rdfa.core.datatype.BaseURI;
 import fi.tikesos.rdfa.core.datatype.IncompleteTriple;
 import fi.tikesos.rdfa.core.datatype.Component;
+import fi.tikesos.rdfa.core.datatype.Language;
+import fi.tikesos.rdfa.core.datatype.Lexical;
+import fi.tikesos.rdfa.core.datatype.Location;
 import fi.tikesos.rdfa.core.registry.Registry;
 
 /**
@@ -42,21 +45,17 @@ public class ProcessingContext {
 	private boolean skipElement = false;
 	private Component newSubject = null;
 	private Component currentObjectResource = null;
-	private String content = null;
+	private Lexical content = null;
 	private String[] property = null;
+	private Location propertyLocation = null;
 	private Component datatype = null;
 	// Custom data: flag to indicate profile loading has failed
 	private boolean profileFailed = false;
-	// Custom data: location information
-	private long beginTagStartLine = 0;
-	private long beginTagStartColumn = 0;
-	private long beginTagEndLine = 0;
-	private long beginTagEndColumn = 0;
 	// Shared between Local Context and Evaluation Context
 	private List<IncompleteTriple> incompleteTriples = null;
 	private Registry prefixMappings = null;
 	private Registry termMappings = null;
-	private String language = null;
+	private Language language = null;
 	private String vocabulary = null;
 	private BaseURI base = null;
 	// Evaluation Context specific
@@ -78,14 +77,8 @@ public class ProcessingContext {
 
 	/**
 	 * @param localContext
-	 * @param beginTagStartLine
-	 * @param beginTagStartColumn
-	 * @param beginTagEndLine
-	 * @param beginTagEndColumn
 	 */
-	public ProcessingContext(ProcessingContext localContext,
-			long beginTagStartLine, long beginTagStartColumn,
-			long beginTagEndLine, long beginTagEndColumn) {
+	public ProcessingContext(ProcessingContext localContext) {
 		if (localContext.isSkipElement() == true) {
 			// If the skip element flag is 'true' then the new evaluation
 			// context is a copy of the current context that was passed in
@@ -138,10 +131,6 @@ public class ProcessingContext {
 		this.profileFailed = localContext.isProfileFailed();
 		this.parentContext = localContext;
 		this.blankNodeHandler = localContext.getBlankNodeHandler();
-		this.beginTagStartLine = beginTagStartLine;
-		this.beginTagStartColumn = beginTagStartColumn;
-		this.beginTagEndLine = beginTagEndLine;
-		this.beginTagEndColumn = beginTagEndColumn;
 		this.prefixMappings = localContext.getPrefixMappings();
 		this.termMappings = localContext.getTermMappings();
 		this.language = localContext.getLanguage();
@@ -238,7 +227,7 @@ public class ProcessingContext {
 	/**
 	 * @return the content
 	 */
-	public String getContent() {
+	public Lexical getContent() {
 		return content;
 	}
 
@@ -246,7 +235,7 @@ public class ProcessingContext {
 	 * @param content
 	 *            the content to set
 	 */
-	public void setContent(String content) {
+	public void setContent(Lexical content) {
 		this.content = content;
 	}
 
@@ -266,6 +255,21 @@ public class ProcessingContext {
 	}
 
 	/**
+	 * @return the propertyLocation
+	 */
+	public Location getPropertyLocation() {
+		return propertyLocation;
+	}
+
+	/**
+	 * @param propertyLocation
+	 *            the propertyLocation to set
+	 */
+	public void setPropertyLocation(Location propertyLocation) {
+		this.propertyLocation = propertyLocation;
+	}
+
+	/**
 	 * @return the datatype
 	 */
 	public Component getDatatype() {
@@ -278,66 +282,6 @@ public class ProcessingContext {
 	 */
 	public void setDatatype(Component datatype) {
 		this.datatype = datatype;
-	}
-
-	/**
-	 * @return the beginTagStartLine
-	 */
-	public long getBeginTagStartLine() {
-		return beginTagStartLine;
-	}
-
-	/**
-	 * @param beginTagStartLine
-	 *            the beginTagStartLine to set
-	 */
-	public void setBeginTagStartLine(long beginTagStartLine) {
-		this.beginTagStartLine = beginTagStartLine;
-	}
-
-	/**
-	 * @return the beginTagStartColumn
-	 */
-	public long getBeginTagStartColumn() {
-		return beginTagStartColumn;
-	}
-
-	/**
-	 * @param beginTagStartColumn
-	 *            the beginTagStartColumn to set
-	 */
-	public void setBeginTagStartColumn(long beginTagStartColumn) {
-		this.beginTagStartColumn = beginTagStartColumn;
-	}
-
-	/**
-	 * @return the beginTagEndLine
-	 */
-	public long getBeginTagEndLine() {
-		return beginTagEndLine;
-	}
-
-	/**
-	 * @param beginTagEndLine
-	 *            the beginTagEndLine to set
-	 */
-	public void setBeginTagEndLine(long beginTagEndLine) {
-		this.beginTagEndLine = beginTagEndLine;
-	}
-
-	/**
-	 * @return the beginTagEndColumn
-	 */
-	public long getBeginTagEndColumn() {
-		return beginTagEndColumn;
-	}
-
-	/**
-	 * @param beginTagEndColumn
-	 *            the beginTagEndColumn to set
-	 */
-	public void setBeginTagEndColumn(long beginTagEndColumn) {
-		this.beginTagEndColumn = beginTagEndColumn;
 	}
 
 	/**
@@ -465,14 +409,14 @@ public class ProcessingContext {
 	/**
 	 * @return
 	 */
-	public String getLanguage() {
+	public Language getLanguage() {
 		return language;
 	}
 
 	/**
 	 * @param language
 	 */
-	public void setLanguage(String language) {
+	public void setLanguage(Language language) {
 		this.language = language;
 	}
 
@@ -506,7 +450,7 @@ public class ProcessingContext {
 		return inputURI.isEmpty() == true ? new Component(base)
 				: new Component(base, new URI(inputURI));
 	}
-	
+
 	/**
 	 * @param term
 	 * @return
@@ -535,8 +479,8 @@ public class ProcessingContext {
 			// Perhaps a CURIE
 			String prefixURI = resolvePrefix(CURIEorAbsURI.substring(0, colon));
 			if (prefixURI != null) {
-				uri = new Component(base,
-						new URI(prefixURI + CURIEorAbsURI.substring(colon + 1)));
+				uri = new Component(base, new URI(prefixURI
+						+ CURIEorAbsURI.substring(colon + 1)));
 			} else {
 				// Prefix not registered, not a CURIE
 				if (colon == 1 && CURIEorAbsURI.charAt(0) == '_') {
@@ -547,7 +491,8 @@ public class ProcessingContext {
 					// Perhaps an absolute uri
 					URI absoluteURI = new URI(CURIEorAbsURI);
 					if (absoluteURI.isAbsolute() == false) {
-						throw new URISyntaxException(CURIEorAbsURI, "not an absolute uri");
+						throw new URISyntaxException(CURIEorAbsURI,
+								"not an absolute uri");
 					}
 					uri = new Component(CURIEorAbsURI);
 				}
@@ -570,8 +515,8 @@ public class ProcessingContext {
 		} else if (XMLChar.isValidNCName(term) == true) {
 			// No prefix (if any)
 			if (getVocabulary() == null) {
-				throw new URISyntaxException(
-						term, "define no prefix vocabulary or add prefix to term");
+				throw new URISyntaxException(term,
+						"define no prefix vocabulary or add prefix to term");
 			}
 			uri = new Component(getVocabulary() + term);
 		} else {
@@ -590,7 +535,8 @@ public class ProcessingContext {
 				&& CURIEorURI.endsWith("]") == true) {
 			// SafeCURIE
 			if (CURIEorURI.length() == 2) {
-				throw new URISyntaxException(CURIEorURI, "not a valid safe curie");
+				throw new URISyntaxException(CURIEorURI,
+						"not a valid safe curie");
 			}
 			CURIEorURI = CURIEorURI.substring(1, CURIEorURI.length() - 1);
 		}
