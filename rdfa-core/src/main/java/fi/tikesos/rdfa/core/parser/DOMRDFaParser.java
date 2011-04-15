@@ -40,6 +40,12 @@ public class DOMRDFaParser {
 		}
 	}
 
+	/**
+	 * Process selected node, children and siblings
+	 * 
+	 * @param parser
+	 * @param node
+	 */
 	private static void process(RDFaParser parser, Node node) {
 		do {
 			switch (node.getNodeType()) {
@@ -58,26 +64,13 @@ public class DOMRDFaParser {
 				parser.endRDFaElement(node.getNamespaceURI(),
 						node.getLocalName(), node.getNodeName());
 				break;
+			case Node.CDATA_SECTION_NODE:
 			case Node.TEXT_NODE:
-				// Text
+				// Text or CDATA
 				parser.writeLiteral(node.getNodeValue(), new DOMLocation(node));
 				break;
 			}
 			// Iterate to next sibling
-			node = node.getNextSibling();
-
-		} while (node != null);
+		} while ((node = node.getNextSibling()) != null);
 	}
-
-	// public void characters(char[] ch, int start, int length)
-	// throws SAXException {
-	// // Capture text content for plain literal
-	// writeLiteral(ch, start, length, new SAXLocation(line, column));
-	// saveLocation();
-	// }
-	// public void ignorableWhitespace(char[] ch, int start, int length)
-	// throws SAXException {
-	// // Whitespace
-	// characters(ch, start, length);
-	// }
 }

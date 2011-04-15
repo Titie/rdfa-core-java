@@ -48,12 +48,11 @@ public class SAXRDFaReader implements RDFReader {
 	private static ProfileHandler profileHandler = null;
 	private RDFErrorHandler errorHandler = null;
 
-	/*
+	/**
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * com.hp.hpl.jena.rdf.model.RDFReader#read(com.hp.hpl.jena.rdf.model.Model,
-	 * java.io.InputStream, java.lang.String)
+	 * @see com.hp.hpl.jena.rdf.model.RDFReader#read(com.hp.hpl.jena.rdf.model.Model,
+	 *      java.io.InputStream, java.lang.String)
 	 */
 	@Override
 	public void read(Model model, InputStream r, String base) {
@@ -88,12 +87,11 @@ public class SAXRDFaReader implements RDFReader {
 		}
 	}
 
-	/*
+	/**
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * com.hp.hpl.jena.rdf.model.RDFReader#read(com.hp.hpl.jena.rdf.model.Model,
-	 * java.io.Reader, java.lang.String)
+	 * @see com.hp.hpl.jena.rdf.model.RDFReader#read(com.hp.hpl.jena.rdf.model.Model,
+	 *      java.io.Reader, java.lang.String)
 	 */
 	public void read(Model model, Reader r, String base) {
 		// Not implemented
@@ -103,12 +101,11 @@ public class SAXRDFaReader implements RDFReader {
 		}
 	}
 
-	/*
+	/**
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * com.hp.hpl.jena.rdf.model.RDFReader#read(com.hp.hpl.jena.rdf.model.Model,
-	 * java.lang.String)
+	 * @see com.hp.hpl.jena.rdf.model.RDFReader#read(com.hp.hpl.jena.rdf.model.Model,
+	 *      java.lang.String)
 	 */
 	public void read(Model model, String url) {
 		// Not implemented
@@ -118,23 +115,22 @@ public class SAXRDFaReader implements RDFReader {
 		}
 	}
 
-	/*
+	/**
 	 * (non-Javadoc)
 	 * 
 	 * @see com.hp.hpl.jena.rdf.model.RDFReader#setProperty(java.lang.String,
-	 * java.lang.Object)
+	 *      java.lang.Object)
 	 */
 	public Object setProperty(String propName, Object propValue) {
 		// Set reader property
 		return null;
 	}
 
-	/*
+	/**
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * com.hp.hpl.jena.rdf.model.RDFReader#setErrorHandler(com.hp.hpl.jena.rdf
-	 * .model.RDFErrorHandler)
+	 * @see com.hp.hpl.jena.rdf.model.RDFReader#setErrorHandler(com.hp.hpl.jena.rdf
+	 *      .model.RDFErrorHandler)
 	 */
 	public RDFErrorHandler setErrorHandler(RDFErrorHandler errorHandler) {
 		// TODO Auto-generated method stub
