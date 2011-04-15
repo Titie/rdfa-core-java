@@ -18,74 +18,47 @@ package fi.tikesos.rdfa.core.exception;
 
 import fi.tikesos.rdfa.core.datatype.Location;
 
-public class RDFaException extends Exception implements Location {
+public class RDFaException extends Exception {
 	private static final long serialVersionUID = 1L;
-	private long line;
-	private long column;
+	private Location location;
 	private String elementName;
 
 	/**
 	 * Constructor
 	 * 
 	 * @param elementName
-	 * @param line
-	 * @param column
+	 * @param location
 	 */
-	public RDFaException(String elementName, long line, long column) {
+	public RDFaException(String elementName, Location location) {
 		super();
 		this.elementName = elementName;
-		this.line = line;
-		this.column = column;
+		this.location = location;
 	}
 
 	/**
 	 * Constructor
 	 * 
 	 * @param elementName
+	 * @param location
 	 * @param cause
-	 * @param line
-	 * @param column
 	 */
-	public RDFaException(String elementName, Throwable cause, long line, long column) {
+	public RDFaException(String elementName, Location location, Throwable cause) {
 		super(cause);
 		this.elementName = elementName;
-		this.line = line;
-		this.column = column;
+		this.location = location;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see fi.tikesos.rdfa.core.datatype.Location#getLine()
+	/**
+	 * @return
 	 */
-	public long getLine() {
-		return line;
+	public Location getLocation() {
+		return location;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see fi.tikesos.rdfa.core.datatype.Location#getColumn()
-	 */
-	public long getColumn() {
-		return column;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see fi.tikesos.rdfa.core.datatype.Location#setLocation(long, long)
-	 */
-	public void setLocation(long line, long column) {
-		this.line = line;
-		this.column = column;
-	}
-	
 	/**
 	 * @return
 	 */
 	public String getElementName() {
 		return elementName;
 	}
-
 }

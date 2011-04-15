@@ -16,6 +16,8 @@
 
 package fi.tikesos.rdfa.core.exception;
 
+import fi.tikesos.rdfa.core.datatype.Location;
+
 /**
  * NotURIException is thrown when URI fails
  * consistency tests
@@ -30,12 +32,11 @@ public class NotURIException extends RDFaException {
 	 * Constructor
 	 * 
 	 * @param elementName
-	 * @param line
-	 * @param column
+	 * @param location
 	 * @param cause
 	 */
-	public NotURIException(String elementName, long line, long column,
+	public NotURIException(String elementName, Location location,
 			Throwable cause) {
-		super(elementName, cause, line, column);
+		super(elementName, location, cause);
 	}
 }

@@ -26,6 +26,7 @@ import fi.tikesos.rdfa.core.datatype.IncompleteTriple;
 import fi.tikesos.rdfa.core.datatype.Component;
 import fi.tikesos.rdfa.core.datatype.Language;
 import fi.tikesos.rdfa.core.datatype.Lexical;
+import fi.tikesos.rdfa.core.datatype.Location;
 import fi.tikesos.rdfa.core.datatype.PrefixMapping;
 import fi.tikesos.rdfa.core.datatype.RDFaAttributes;
 import fi.tikesos.rdfa.core.exception.ErrorHandler;
@@ -116,20 +117,19 @@ public class RDFaParser {
 	 * @param localName
 	 * @param qName
 	 * @param attributes
+	 * @param location
 	 * @throws SAXException
 	 */
 	public void beginRDFaElement(String uri, String localName, String qName,
-			Attributes attributes, long startLine, long startColumn,
-			long endLine, long endColumn) {
+			Attributes attributes, Location location) {
 		if (literalCollector.collectStartElement(uri, localName, qName,
-				attributes) == true) {
+				attributes, location) == true) {
 			return;
 		}
 
 		// Create new evaluation context
 		depth++;
-		context = new ProcessingContext(context, startLine, startColumn,
-				endLine, endColumn);
+		context = new ProcessingContext(context);
 
 		// Process attributes
 		RDFaAttributes rdfaAttributes = new RDFaAttributes(attributes);
@@ -146,15 +146,16 @@ public class RDFaParser {
 		}
 		if (rdfaAttributes.getLang() != null) {
 			// Set language
-			context.setLanguage(rdfaAttributes.getLang());
+			context.setLanguage(new Language(rdfaAttributes.getLang(), rdfaAttributes.getLangLocation()));
 		}
 		if (rdfaAttributes.getProperty() != null) {
 			// Set property
 			context.setProperty(rdfaAttributes.getProperty());
+			context.setPropertyLocation(rdfaAttributes.getPropertyLocation());
 		}
 		if (rdfaAttributes.getContent() != null) {
 			// Set content
-			context.setContent(rdfaAttributes.getContent());
+			context.setContent(new Lexical(rdfaAttributes.getContent(), rdfaAttributes.getContentLocation()));
 		}
 
 		if (format == XHTML_RDFA) {
@@ -170,15 +171,13 @@ public class RDFaParser {
 						// Failed profile causes all subsequent elements
 						// to be ignored!
 						errorHandler.fatalError(new ProfileLoadException(
-								XHTML_PROFILE, "profile", startLine,
-								startColumn, exception));
+								XHTML_PROFILE, "profile", location, exception));
 						context.setProfileFailed(true);
 					}
 				} else {
 					errorHandler
 							.fatalError(new ProfileHandlerNotDefinedException(
-									XHTML_PROFILE, "profile", startLine,
-									startColumn));
+									XHTML_PROFILE, "profile", location));
 					context.setProfileFailed(true);
 				}
 				break;
@@ -198,7 +197,7 @@ public class RDFaParser {
 						context.setBase(rdfaAttributes.getHref());
 					} catch (Exception exception) {
 						errorHandler.warning(new NotURIException("href",
-								startLine, startColumn, exception));
+								rdfaAttributes.getHrefLocation(), exception));
 					}
 				}
 				break;
@@ -215,8 +214,7 @@ public class RDFaParser {
 						// Failed profile causes all subsequent elements
 						// to be ignored!
 						errorHandler.fatalError(new ProfileLoadException(
-								profileURI, "profile", startLine, startColumn,
-								exception));
+								profileURI, "profile", rdfaAttributes.getProfileLocation(), exception));
 						context.setProfileFailed(true);
 						break;
 					}
@@ -224,8 +222,7 @@ public class RDFaParser {
 			} else {
 				// Can not continue processing
 				errorHandler.fatalError(new ProfileHandlerNotDefinedException(
-						rdfaAttributes.getProfile()[0], "profile", startLine,
-						startColumn));
+						rdfaAttributes.getProfile()[0], "profile", rdfaAttributes.getProfileLocation()));
 				context.setProfileFailed(true);
 			}
 		}
@@ -254,11 +251,11 @@ public class RDFaParser {
 					Component datatypeURI = context
 							.expandTERMorCURIEorAbsURI(rdfaAttributes
 									.getDatatype());
-					datatypeURI.setLocation(startLine, startColumn);
+					datatypeURI.setLocation(rdfaAttributes.getDatatypeLocation());
 					context.setDatatype(datatypeURI);
 				} catch (Exception exception) {
 					errorHandler.warning(new NotTERMorCURIEorAbsURIException(
-							"datatype", startLine, startColumn, exception));
+							"datatype", rdfaAttributes.getDatatypeLocation(), exception));
 				}
 			}
 
@@ -274,44 +271,44 @@ public class RDFaParser {
 					try {
 						Component aboutURI = context
 								.expandCURIEorURI(rdfaAttributes.getAbout());
-						aboutURI.setLocation(startLine, startColumn);
+						aboutURI.setLocation(rdfaAttributes.getAboutLocation());
 						context.setNewSubject(aboutURI);
 					} catch (Exception exception) {
 						errorHandler.warning(new NotCURIEorURIException(
-								"about", startLine, startColumn, exception));
+								"about", rdfaAttributes.getAboutLocation(), exception));
 					}
 				} else if (rdfaAttributes.getSrc() != null) {
 					// otherwise, by using the URI from @src, if present
 					try {
 						Component srcURI = context.expandURI(rdfaAttributes
 								.getSrc());
-						srcURI.setLocation(startLine, startColumn);
+						srcURI.setLocation(rdfaAttributes.getSrcLocation());
 						context.setNewSubject(srcURI);
 					} catch (Exception exception) {
 						errorHandler.warning(new NotURIException("src",
-								startLine, startColumn, exception));
+								rdfaAttributes.getSrcLocation(), exception));
 					}
 				} else if (rdfaAttributes.getResource() != null) {
 					// otherwise, by using the URI from @resource, if present
 					try {
 						Component resourceURI = context
 								.expandCURIEorURI(rdfaAttributes.getResource());
-						resourceURI.setLocation(startLine, startColumn);
+						resourceURI.setLocation(rdfaAttributes.getResourceLocation());
 						context.setNewSubject(resourceURI);
 					} catch (Exception exception) {
 						errorHandler.warning(new NotCURIEorURIException(
-								"resource", startLine, startColumn, exception));
+								"resource", rdfaAttributes.getResourceLocation(), exception));
 					}
 				} else if (rdfaAttributes.getHref() != null) {
 					// otherwise, by using the URI from @href, if present
 					try {
 						Component hrefURI = context.expandURI(rdfaAttributes
 								.getHref());
-						hrefURI.setLocation(startLine, startColumn);
+						hrefURI.setLocation(rdfaAttributes.getHrefLocation());
 						context.setNewSubject(hrefURI);
 					} catch (Exception exception) {
 						errorHandler.warning(new NotURIException("href",
-								startLine, startColumn, exception));
+								rdfaAttributes.getHrefLocation(), exception));
 					}
 				} else if (depth == 2) {
 					// if no URI is provided by a resource attribute, then
@@ -321,11 +318,11 @@ public class RDFaParser {
 					// for @about.
 					try {
 						Component aboutURI = context.expandCURIEorURI("");
-						aboutURI.setLocation(startLine, startColumn);
+						aboutURI.setLocation(location);
 						context.setNewSubject(aboutURI);
 					} catch (Exception exception) {
 						errorHandler.warning(new NotCURIEorURIException(
-								"about", startLine, startColumn, exception));
+								"about", location, exception));
 					}
 				}
 
@@ -335,20 +332,17 @@ public class RDFaParser {
 					// match from the following rules will apply
 					if (rdfaAttributes.getTypeof() != null) {
 						// if @typeof is present, then new subject is set to be
-						// a
-						// newly created bnode
+						// a newly created bnode
 						context.setNewSubject(new Component(context
-								.generateBlankNode(), startLine, startColumn));
+								.generateBlankNode(), location));
 					} else {
 						// otherwise, if parent object is present, new subject
-						// is
-						// set to the value of parent object
+						// is set to the value of parent object
 						if (context.getParentObject() != null) {
 							context.setNewSubject(context.getParentObject());
 							if (context.getProperty() == null) {
 								// Additionally, if @property is not present
-								// then
-								// the skip element flag is set to 'true';
+								// then the skip element flag is set to 'true';
 								context.setSkipElement(true);
 							}
 						}
@@ -365,22 +359,22 @@ public class RDFaParser {
 					try {
 						Component aboutURI = context
 								.expandCURIEorURI(rdfaAttributes.getAbout());
-						aboutURI.setLocation(startLine, startColumn);
+						aboutURI.setLocation(rdfaAttributes.getAboutLocation());
 						context.setNewSubject(aboutURI);
 					} catch (Exception exception) {
 						errorHandler.warning(new NotCURIEorURIException(
-								"about", startLine, startColumn, exception));
+								"about", rdfaAttributes.getAboutLocation(), exception));
 					}
 				} else if (rdfaAttributes.getSrc() != null) {
 					// otherwise, by using the URI from @src, if present
 					try {
 						Component srcURI = context.expandURI(rdfaAttributes
 								.getSrc());
-						srcURI.setLocation(startLine, startColumn);
+						srcURI.setLocation(rdfaAttributes.getSrcLocation());
 						context.setNewSubject(srcURI);
 					} catch (Exception exception) {
 						errorHandler.warning(new NotURIException("src",
-								startLine, startColumn, exception));
+								rdfaAttributes.getSrcLocation(), exception));
 					}
 				} else if (depth == 2) {
 					// if no URI is provided by a resource attribute, then
@@ -390,11 +384,11 @@ public class RDFaParser {
 					// for @about.
 					try {
 						Component aboutURI = context.expandCURIEorURI("");
-						aboutURI.setLocation(startLine, startColumn);
+						aboutURI.setLocation(location);
 						context.setNewSubject(aboutURI);
 					} catch (Exception exception) {
 						errorHandler.warning(new NotCURIEorURIException(
-								"about", startLine, startColumn, exception));
+								"about", location, exception));
 					}
 				}
 
@@ -407,7 +401,7 @@ public class RDFaParser {
 						// a
 						// newly created bnode;
 						context.setNewSubject(new Component(context
-								.generateBlankNode(), startLine, startColumn));
+								.generateBlankNode(), location));
 					} else if (context.getParentObject() != null) {
 						// otherwise, if parent object is present, new subject
 						// is
@@ -423,22 +417,22 @@ public class RDFaParser {
 					try {
 						Component resourceURI = context
 								.expandCURIEorURI(rdfaAttributes.getResource());
-						resourceURI.setLocation(startLine, startColumn);
+						resourceURI.setLocation(rdfaAttributes.getResourceLocation());
 						context.setCurrentObjectResource(resourceURI);
 					} catch (Exception exception) {
 						errorHandler.warning(new NotCURIEorURIException(
-								"resource", startLine, startColumn, exception));
+								"resource", rdfaAttributes.getResourceLocation(), exception));
 					}
 				} else if (rdfaAttributes.getHref() != null) {
 					// otherwise, by using the URI from @href, if present
 					try {
 						Component hrefURI = context.expandURI(rdfaAttributes
 								.getHref());
-						hrefURI.setLocation(startLine, startColumn);
+						hrefURI.setLocation(rdfaAttributes.getHrefLocation());
 						context.setCurrentObjectResource(hrefURI);
 					} catch (Exception exception) {
 						errorHandler.warning(new NotURIException("href",
-								startLine, startColumn, exception));
+								rdfaAttributes.getHrefLocation(), exception));
 					}
 				}
 			}
@@ -459,14 +453,13 @@ public class RDFaParser {
 					try {
 						Component typeURI = context
 								.expandTERMorCURIEorAbsURI(type);
-						typeURI.setLocation(startLine, startColumn);
+						typeURI.setLocation(rdfaAttributes.getTypeofLocation());
 						tripleSink.generateTriple(context.getNewSubject(),
-								new Component(RDF_NS + "type", startLine,
-										startColumn), typeURI);
+								new Component(RDF_NS + "type", location), typeURI);
 					} catch (URISyntaxException exception) {
 						errorHandler
 								.warning(new NotTERMorCURIEorAbsURIException(
-										"typeof", startLine, startColumn,
+										"typeof", rdfaAttributes.getTypeofLocation(),
 										exception));
 					}
 				}
@@ -487,14 +480,14 @@ public class RDFaParser {
 						try {
 							Component predicateURI = context
 									.expandTERMorCURIEorAbsURI(predicate);
-							predicateURI.setLocation(startLine, startColumn);
+							predicateURI.setLocation(rdfaAttributes.getRelLocation());
 							tripleSink.generateTriple(context.getNewSubject(),
 									predicateURI,
 									context.getCurrentObjectResource());
 						} catch (URISyntaxException exception) {
 							errorHandler
 									.warning(new NotTERMorCURIEorAbsURIException(
-											"rel", startLine, startColumn,
+											"rel", rdfaAttributes.getRelLocation(),
 											exception));
 						}
 					}
@@ -509,14 +502,14 @@ public class RDFaParser {
 						try {
 							Component predicateURI = context
 									.expandTERMorCURIEorAbsURI(predicate);
-							predicateURI.setLocation(startLine, startColumn);
+							predicateURI.setLocation(rdfaAttributes.getRevLocation());
 							tripleSink.generateTriple(
 									context.getCurrentObjectResource(),
 									predicateURI, context.getNewSubject());
 						} catch (URISyntaxException exception) {
 							errorHandler
 									.warning(new NotTERMorCURIEorAbsURIException(
-											"rev", startLine, startColumn,
+											"rev", rdfaAttributes.getRevLocation(),
 											exception));
 						}
 					}
@@ -542,13 +535,13 @@ public class RDFaParser {
 						try {
 							Component predicateURI = context
 									.expandTERMorCURIEorAbsURI(predicate);
-							predicateURI.setLocation(startLine, startColumn);
+							predicateURI.setLocation(rdfaAttributes.getRelLocation());
 							incompleteTriples.add(new IncompleteTriple(
 									predicateURI, false));
 						} catch (URISyntaxException exception) {
 							errorHandler
 									.warning(new NotTERMorCURIEorAbsURIException(
-											"rel", startLine, startColumn,
+											"rel", rdfaAttributes.getRelLocation(),
 											exception));
 						}
 					}
@@ -564,13 +557,13 @@ public class RDFaParser {
 						try {
 							Component predicateURI = context
 									.expandTERMorCURIEorAbsURI(predicate);
-							predicateURI.setLocation(startLine, startColumn);
+							predicateURI.setLocation(rdfaAttributes.getRevLocation());
 							incompleteTriples.add(new IncompleteTriple(
 									predicateURI, true));
 						} catch (URISyntaxException exception) {
 							errorHandler
 									.warning(new NotTERMorCURIEorAbsURIException(
-											"rev", startLine, startColumn,
+											"rev", rdfaAttributes.getRevLocation(),
 											exception));
 						}
 					}
@@ -579,7 +572,7 @@ public class RDFaParser {
 					context.setLocalIncompleteTriples(incompleteTriples);
 				}
 				context.setCurrentObjectResource(new Component(context
-						.generateBlankNode(), startLine, startColumn));
+						.generateBlankNode(), location));
 			}
 
 			if (context.getProperty() != null) {
@@ -614,9 +607,7 @@ public class RDFaParser {
 			if (context.getProperty() != null) {
 				Component datatype = null;
 				Lexical lexical = null;
-				Language language = context.getLanguage() != null ? new Language(
-						context.getLanguage(), context.getBeginTagStartLine(),
-						context.getBeginTagStartColumn()) : null;
+				Language language = context.getLanguage();
 
 				if (context.getDatatype() != null
 						&& context.getDatatype().getValue().isEmpty() == false
@@ -630,16 +621,11 @@ public class RDFaParser {
 					if (context.getContent() != null) {
 						// The actual literal is either the value of
 						// @content (if present)
-						lexical = new Lexical(context.getContent(),
-								context.getBeginTagStartLine(),
-								context.getBeginTagStartColumn());
+						lexical = context.getContent();
 					} else {
 						// or a string created by concatenating the
 						// value of all descendant text nodes
-						lexical = new Lexical(
-								literalCollector.stopCollecting(),
-								context.getBeginTagEndLine(),
-								context.getBeginTagEndColumn());
+						lexical = literalCollector.stopCollecting();
 					}
 					datatype = context.getDatatype();
 				} else if (context.getDatatype() != null
@@ -648,25 +634,18 @@ public class RDFaParser {
 					// as an XML literal if @datatype is present and is set to
 					// XMLLiteral in the vocabulary
 					// http://www.w3.org/1999/02/22-rdf-syntax-ns#
-					lexical = new Lexical(literalCollector.stopCollecting(),
-							context.getBeginTagEndLine(),
-							context.getBeginTagEndColumn());
+					lexical = literalCollector.stopCollecting();
 					datatype = context.getDatatype();
 				} else {
 					// otherwise as a plain literal
 					if (context.getContent() != null) {
 						// The actual literal is either the value of
 						// @content (if present)
-						lexical = new Lexical(context.getContent(),
-								context.getBeginTagStartLine(),
-								context.getBeginTagStartColumn());
+						lexical = context.getContent();
 					} else {
 						// or a string created by concatenating the
 						// value of all descendant text nodes
-						lexical = new Lexical(
-								literalCollector.stopCollecting(),
-								context.getBeginTagEndLine(),
-								context.getBeginTagEndColumn());
+						lexical = literalCollector.stopCollecting();
 					}
 				}
 
@@ -677,18 +656,14 @@ public class RDFaParser {
 						try {
 							Component predicateURI = context
 									.expandTERMorCURIEorAbsURI(predicate);
-							predicateURI.setLocation(
-									context.getBeginTagStartLine(),
-									context.getBeginTagStartColumn());
+							predicateURI.setLocation(context.getPropertyLocation());
 							tripleSink.generateTripleLiteral(
 									context.getNewSubject(), predicateURI,
 									lexical, language, datatype);
 						} catch (URISyntaxException exception) {
 							errorHandler
 									.warning(new NotTERMorCURIEorAbsURIException(
-											"property", context
-													.getBeginTagStartLine(),
-											context.getBeginTagStartColumn(),
+											"property", context.getPropertyLocation(),
 											exception));
 						}
 					}
@@ -741,11 +716,18 @@ public class RDFaParser {
 	 * @param ch
 	 * @param start
 	 * @param length
-	 * @param line
-	 * @param column
+	 * @param location
 	 */
-	public void writeLiteral(char[] ch, int start, int length, long line,
-			long column) {
-		literalCollector.collect(ch, start, length, true);
+	public void writeLiteral(char[] ch, int start, int length,
+			Location location) {
+		literalCollector.collect(ch, start, length, true, location);
+	}
+
+	/**
+	 * @param str
+	 * @param location
+	 */
+	public void writeLiteral(String str, Location location) {
+		literalCollector.collect(str, true, location);
 	}
 }

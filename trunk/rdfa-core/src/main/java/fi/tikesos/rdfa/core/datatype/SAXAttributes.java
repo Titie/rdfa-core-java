@@ -8,11 +8,12 @@ import org.xml.sax.Attributes;
  */
 public class SAXAttributes implements fi.tikesos.rdfa.core.datatype.Attributes {
 	private Attributes attributes;
+	private SAXLocation location;
 
 	/**
 	 * @param attributes
 	 */
-	public SAXAttributes(Attributes attributes) {
+	public SAXAttributes(Attributes attributes, SAXLocation location) {
 		this.attributes = attributes;
 	}
 
@@ -49,5 +50,12 @@ public class SAXAttributes implements fi.tikesos.rdfa.core.datatype.Attributes {
 	 */
 	public String getValue(int index) {
 		return attributes.getValue(index);
+	}
+
+	/**
+	 * @see fi.tikesos.rdfa.core.datatype.Attributes#getLocation(int)
+	 */
+	public Location getLocation(int index) {
+		return location;
 	}
 }

@@ -11,21 +11,37 @@ import fi.tikesos.rdfa.core.parser.RDFaParser;
  */
 public class RDFaAttributes {
 	private String about;
+	private Location aboutLocation;
 	private String content;
+	private Location contentLocation;
 	private String datatype;
+	private Location datatypeLocation;
 	private String href;
+	private Location hrefLocation;
 	private String defaultXmlns;
+	private Location defaultXmlnsLocation;
 	private List<PrefixMapping> xmlns;
+	private List<Location> xmlnsLocation;
 	private List<PrefixMapping> prefix;
+	private Location prefixLocation;
 	private String []profile;
+	private Location profileLocation;
 	private String []property;
+	private Location propertyLocation;
 	private String []rel;
+	private Location relLocation;
 	private String resource;
+	private Location resourceLocation;
 	private String []rev;
+	private Location revLocation;
 	private String src;
+	private Location srcLocation;
 	private String []typeof;
+	private Location typeofLocation;
 	private String vocab;
+	private Location vocabLocation;
 	private String lang;
+	private Location langLocation;
 	
 	/**
 	 * Constructor
@@ -34,6 +50,7 @@ public class RDFaAttributes {
 	 */
 	public RDFaAttributes(Attributes attributes) {
 		xmlns = new ArrayList<PrefixMapping>();
+		xmlnsLocation = new ArrayList<Location>();
 		prefix = new ArrayList<PrefixMapping>();
 		
 		// Process attributes
@@ -43,10 +60,12 @@ public class RDFaAttributes {
 				// 2.
 				// @vocab
 				vocab = attributes.getValue(i);
+				vocabLocation = attributes.getLocation(i);
 			} else if ("profile".equals(attributeQName) == true) {
 				// @profile
 				profile = attributes.getValue(i).trim()
 						.split("\\s");
+				profileLocation = attributes.getLocation(i);
 			} else if ("prefix".equals(attributeQName) == true) {
 				// @prefix
 				String[] prefix = attributes.getValue(i).trim().split("\\s+");
@@ -59,52 +78,66 @@ public class RDFaAttributes {
 										prefix[n + 1]));
 					} // Else exception?
 				}
+				prefixLocation = attributes.getLocation(i);
 			} else if (attributeQName.startsWith("xmlns:")) {
 				// @xmlns:*
 				xmlns.add(new PrefixMapping(
 						attributeQName.substring(6), attributes.getValue(i)));
+				xmlnsLocation.add(attributes.getLocation(i));
 			} else if ("lang".equals(attributeQName) == true
 					|| (RDFaParser.XML_NS.equals(attributes.getURI(i)) == true && "lang"
 							.equals(attributes.getLocalName(i)) == true)) {
 				// @lang or @xml:lang
 				lang = attributes.getValue(i);
+				langLocation = attributes.getLocation(i);
 			} else if ("rev".equals(attributeQName) == true) {
 				// @rev
 				rev = attributes.getValue(i).trim()
 						.split("\\s+");
+				revLocation = attributes.getLocation(i);
 			} else if ("rel".equals(attributeQName) == true) {
 				// @rel
 				rel = attributes.getValue(i).trim()
 						.split("\\s+");
-			} else if ("about".equals(attributeQName) == true) {
+				relLocation = attributes.getLocation(i);
+		} else if ("about".equals(attributeQName) == true) {
 				// @about
 				about = attributes.getValue(i);
+				aboutLocation = attributes.getLocation(i);
 			} else if ("src".equals(attributeQName) == true) {
 				// @src
 				src = attributes.getValue(i);
+				srcLocation = attributes.getLocation(i);
 			} else if ("href".equals(attributeQName) == true) {
 				// @href
 				href = attributes.getValue(i);
+				hrefLocation = attributes.getLocation(i);
 			} else if ("typeof".equals(attributeQName) == true) {
 				// @typeof
 				typeof = attributes.getValue(i).trim()
 						.split("\\s+");
+				typeofLocation = attributes.getLocation(i);
 			} else if ("property".equals(attributeQName) == true) {
 				// @property
 				property = attributes.getValue(i).trim()
 						.split("\\s+");
+				propertyLocation = attributes.getLocation(i);
 			} else if ("resource".equals(attributeQName) == true) {
 				// @resource
 				resource = attributes.getValue(i);
+				resourceLocation = attributes.getLocation(i);
 			} else if ("content".equals(attributeQName) == true) {
 				// @content
 				content = attributes.getValue(i);
+				contentLocation = attributes.getLocation(i);
 			} else if ("datatype".equals(attributeQName) == true) {
 				// @datatype
 				datatype = attributes.getValue(i);
+				datatypeLocation = attributes.getLocation(i);
 			} else if ("xmlns".equals(attributeQName) == true) {
 				// @xmlns
 				defaultXmlns = attributes.getValue(i);
+				defaultXmlnsLocation = attributes.getLocation(i);
 			}
 		}
 	}
@@ -115,22 +148,10 @@ public class RDFaAttributes {
 		return about;
 	}
 	/**
-	 * @param about the about to set
-	 */
-	public void setAbout(String about) {
-		this.about = about;
-	}
-	/**
 	 * @return the content
 	 */
 	public String getContent() {
 		return content;
-	}
-	/**
-	 * @param content the content to set
-	 */
-	public void setContent(String content) {
-		this.content = content;
 	}
 	/**
 	 * @return the datatype
@@ -139,22 +160,10 @@ public class RDFaAttributes {
 		return datatype;
 	}
 	/**
-	 * @param datatype the datatype to set
-	 */
-	public void setDatatype(String datatype) {
-		this.datatype = datatype;
-	}
-	/**
 	 * @return the href
 	 */
 	public String getHref() {
 		return href;
-	}
-	/**
-	 * @param href the href to set
-	 */
-	public void setHref(String href) {
-		this.href = href;
 	}
 	/**
 	 * @return the defaultXmlns
@@ -163,22 +172,10 @@ public class RDFaAttributes {
 		return defaultXmlns;
 	}
 	/**
-	 * @param defaultXmlns the defaultXmlns to set
-	 */
-	public void setDefaultXmlns(String defaultXmlns) {
-		this.defaultXmlns = defaultXmlns;
-	}
-	/**
 	 * @return the xmlns
 	 */
 	public List<PrefixMapping> getXmlns() {
 		return xmlns;
-	}
-	/**
-	 * @param xmlns the xmlns to set
-	 */
-	public void addXmlns(PrefixMapping xmlns) {
-		this.xmlns.add(xmlns);
 	}
 	/**
 	 * @return the prefix
@@ -187,22 +184,10 @@ public class RDFaAttributes {
 		return prefix;
 	}
 	/**
-	 * @param prefix the prefix to set
-	 */
-	public void addPrefix(PrefixMapping prefix) {
-		this.prefix.add(prefix);
-	}
-	/**
 	 * @return the profile
 	 */
 	public String[] getProfile() {
 		return profile;
-	}
-	/**
-	 * @param profile the profile to set
-	 */
-	public void setProfile(String[] profile) {
-		this.profile = profile;
 	}
 	/**
 	 * @return the property
@@ -211,22 +196,10 @@ public class RDFaAttributes {
 		return property;
 	}
 	/**
-	 * @param property the property to set
-	 */
-	public void setProperty(String[] property) {
-		this.property = property;
-	}
-	/**
 	 * @return the rel
 	 */
 	public String[] getRel() {
 		return rel;
-	}
-	/**
-	 * @param rel the rel to set
-	 */
-	public void setRel(String[] rel) {
-		this.rel = rel;
 	}
 	/**
 	 * @return the resource
@@ -235,22 +208,10 @@ public class RDFaAttributes {
 		return resource;
 	}
 	/**
-	 * @param resource the resource to set
-	 */
-	public void setResource(String resource) {
-		this.resource = resource;
-	}
-	/**
 	 * @return the rev
 	 */
 	public String[] getRev() {
 		return rev;
-	}
-	/**
-	 * @param rev the rev to set
-	 */
-	public void setRev(String[] rev) {
-		this.rev = rev;
 	}
 	/**
 	 * @return the src
@@ -259,22 +220,10 @@ public class RDFaAttributes {
 		return src;
 	}
 	/**
-	 * @param src the src to set
-	 */
-	public void setSrc(String src) {
-		this.src = src;
-	}
-	/**
 	 * @return the typeof
 	 */
 	public String[] getTypeof() {
 		return typeof;
-	}
-	/**
-	 * @param typeof the typeof to set
-	 */
-	public void setTypeof(String[] typeof) {
-		this.typeof = typeof;
 	}
 	/**
 	 * @return the vocab
@@ -283,21 +232,105 @@ public class RDFaAttributes {
 		return vocab;
 	}
 	/**
-	 * @param vocab the vocab to set
-	 */
-	public void setVocab(String vocab) {
-		this.vocab = vocab;
-	}
-	/**
 	 * @return the lang
 	 */
 	public String getLang() {
 		return lang;
 	}
 	/**
-	 * @param lang the lang to set
+	 * @return the aboutLocation
 	 */
-	public void setLang(String lang) {
-		this.lang = lang;
+	public Location getAboutLocation() {
+		return aboutLocation;
+	}
+	/**
+	 * @return the contentLocation
+	 */
+	public Location getContentLocation() {
+		return contentLocation;
+	}
+	/**
+	 * @return the datatypeLocation
+	 */
+	public Location getDatatypeLocation() {
+		return datatypeLocation;
+	}
+	/**
+	 * @return the hrefLocation
+	 */
+	public Location getHrefLocation() {
+		return hrefLocation;
+	}
+	/**
+	 * @return the defaultXmlnsLocation
+	 */
+	public Location getDefaultXmlnsLocation() {
+		return defaultXmlnsLocation;
+	}
+	/**
+	 * @return the xmlnsLocation
+	 */
+	public List<Location> getXmlnsLocation() {
+		return xmlnsLocation;
+	}
+	/**
+	 * @return the prefixLocation
+	 */
+	public Location getPrefixLocation() {
+		return prefixLocation;
+	}
+	/**
+	 * @return the profileLocation
+	 */
+	public Location getProfileLocation() {
+		return profileLocation;
+	}
+	/**
+	 * @return the propertyLocation
+	 */
+	public Location getPropertyLocation() {
+		return propertyLocation;
+	}
+	/**
+	 * @return the relLocation
+	 */
+	public Location getRelLocation() {
+		return relLocation;
+	}
+	/**
+	 * @return the resourceLocation
+	 */
+	public Location getResourceLocation() {
+		return resourceLocation;
+	}
+	/**
+	 * @return the revLocation
+	 */
+	public Location getRevLocation() {
+		return revLocation;
+	}
+	/**
+	 * @return the srcLocation
+	 */
+	public Location getSrcLocation() {
+		return srcLocation;
+	}
+	/**
+	 * @return the typeofLocation
+	 */
+	public Location getTypeofLocation() {
+		return typeofLocation;
+	}
+	/**
+	 * @return the vocabLocation
+	 */
+	public Location getVocabLocation() {
+		return vocabLocation;
+	}
+	/**
+	 * @return the langLocation
+	 */
+	public Location getLangLocation() {
+		return langLocation;
 	}
 }

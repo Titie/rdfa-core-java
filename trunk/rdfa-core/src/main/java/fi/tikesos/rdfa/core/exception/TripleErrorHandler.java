@@ -36,9 +36,9 @@ public class TripleErrorHandler implements ErrorHandler {
 		tripleSink.generateTriple(subject, RDF_NS + "type", RDFA_PROCESSOR_NS + exceptionType);
 		tripleSink.generateTriple(subject, RDFA_PROCESSOR_NS + "type", RDFA_PROCESSOR_NS + exception.getClass().getSimpleName());
 		tripleSink.generateTripleLiteral(subject, RDFA_PROCESSOR_NS + "elementName", exception.getElementName(), null, null);
-		tripleSink.generateTripleLiteral(subject, RDFA_PROCESSOR_NS + "message", exception.getMessage(), null, null);
-		tripleSink.generateTripleLiteral(subject, RDFA_PROCESSOR_NS + "lineNumber", String.valueOf(exception.getLine()), null, null);
-		tripleSink.generateTripleLiteral(subject, RDFA_PROCESSOR_NS + "columnNumber", String.valueOf(exception.getColumn()), null, null);
+//		tripleSink.generateTripleLiteral(subject, RDFA_PROCESSOR_NS + "message", exception.getMessage(), null, null);
+//		tripleSink.generateTripleLiteral(subject, RDFA_PROCESSOR_NS + "lineNumber", String.valueOf(exception.getLine()), null, null);
+//		tripleSink.generateTripleLiteral(subject, RDFA_PROCESSOR_NS + "columnNumber", String.valueOf(exception.getColumn()), null, null);
 		this.exceptionCount++;
 	}
 

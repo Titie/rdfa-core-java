@@ -8,6 +8,7 @@ import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 
 import fi.tikesos.rdfa.core.datatype.SAXAttributes;
+import fi.tikesos.rdfa.core.datatype.SAXLocation;
 import fi.tikesos.rdfa.core.exception.ErrorHandler;
 import fi.tikesos.rdfa.core.profile.ProfileHandler;
 import fi.tikesos.rdfa.core.triple.TripleSink;
@@ -90,8 +91,9 @@ public class SAXRDFaParser extends RDFaParser implements ContentHandler {
 	@Override
 	public void startElement(String uri, String localName, String qName,
 			Attributes atts) throws SAXException {
-		beginRDFaElement(uri, localName, qName, new SAXAttributes(atts), line, column,
-				locator.getLineNumber(), locator.getColumnNumber());
+		SAXLocation location = new SAXLocation(line, column);
+		beginRDFaElement(uri, localName, qName, new SAXAttributes(atts, location),
+				location);
 		saveLocation();
 	}
 
@@ -113,7 +115,7 @@ public class SAXRDFaParser extends RDFaParser implements ContentHandler {
 	public void characters(char[] ch, int start, int length)
 			throws SAXException {
 		// Capture text content for plain literal
-		writeLiteral(ch, start, length, line, column);
+		writeLiteral(ch, start, length, new SAXLocation(line, column));
 		saveLocation();
 	}
 

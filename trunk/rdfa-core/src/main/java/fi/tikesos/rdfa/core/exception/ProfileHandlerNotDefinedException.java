@@ -16,6 +16,8 @@
 
 package fi.tikesos.rdfa.core.exception;
 
+import fi.tikesos.rdfa.core.datatype.Location;
+
 /**
  * ProfileHandlerNotDefinedException is used to indicate
  * that document requests RDFa profile to be loaded, but
@@ -35,9 +37,9 @@ public class ProfileHandlerNotDefinedException extends RDFaException {
 	 * @param line
 	 * @param column
 	 */
-	public ProfileHandlerNotDefinedException(String profileURI, String elementName, long line,
-			long column) {
-		super(elementName, line, column);
+	public ProfileHandlerNotDefinedException(String profileURI, String elementName, Location location) {
+		super(elementName, location);
+		this.profileURI = profileURI;
 	}
 	
 	/**
