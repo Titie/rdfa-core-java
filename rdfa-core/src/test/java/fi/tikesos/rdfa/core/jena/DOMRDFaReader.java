@@ -16,16 +16,13 @@
 
 package fi.tikesos.rdfa.core.jena;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import java.net.URISyntaxException;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.XMLReaderFactory;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.w3c.dom.Document;
 
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.RDFErrorHandler;
@@ -33,8 +30,8 @@ import com.hp.hpl.jena.rdf.model.RDFReader;
 
 import fi.tikesos.rdfa.core.exception.ErrorHandler;
 import fi.tikesos.rdfa.core.exception.TripleErrorHandler;
+import fi.tikesos.rdfa.core.parser.DOMRDFaParser;
 import fi.tikesos.rdfa.core.parser.RDFaParser;
-import fi.tikesos.rdfa.core.parser.SAXRDFaParser;
 import fi.tikesos.rdfa.core.profile.ProfileHandler;
 import fi.tikesos.rdfa.core.profile.SimpleProfileHandler;
 import fi.tikesos.rdfa.core.triple.TripleSink;
@@ -44,56 +41,51 @@ import fi.tikesos.rdfa.core.util.NullEntityResolver;
  * @author ssakorho
  * 
  */
-public class RDFaReader implements RDFReader {
+public class DOMRDFaReader implements RDFReader {
 	private static ProfileHandler profileHandler = null;
 	private RDFErrorHandler errorHandler = null;
 
-	/*
+	/**
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * com.hp.hpl.jena.rdf.model.RDFReader#read(com.hp.hpl.jena.rdf.model.Model,
-	 * java.io.InputStream, java.lang.String)
+	 * @see com.hp.hpl.jena.rdf.model.RDFReader#read(com.hp.hpl.jena.rdf.model.Model,
+	 *      java.io.InputStream, java.lang.String)
 	 */
 	@Override
 	public void read(Model model, InputStream r, String base) {
-		// Default method
-		XMLReader reader;
 		try {
-			reader = XMLReaderFactory.createXMLReader();
-			reader.setFeature("http://xml.org/sax/features/validation",
-					Boolean.FALSE);
-			reader.setFeature("http://xml.org/sax/features/namespace-prefixes",
-					Boolean.TRUE);
-			reader.setEntityResolver(new NullEntityResolver());
-
+			// Create DOM builder
+			DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory
+					.newInstance();
+			documentBuilderFactory.setValidating(false);
+			documentBuilderFactory.setNamespaceAware(true);
+			documentBuilderFactory.setIgnoringElementContentWhitespace(false);
+			// Create DOM document
+			DocumentBuilder documentBuilder = documentBuilderFactory
+					.newDocumentBuilder();
+			documentBuilder.setEntityResolver(new NullEntityResolver());
+			Document document = documentBuilder.parse(r);
+			
+			// Create profile handler
 			if (profileHandler == null) {
 				profileHandler = new SimpleProfileHandler();
 			}
-
-			try {
-				TripleSink sink = new JenaTripleSink(model);
-				ErrorHandler errorHandler = new TripleErrorHandler(sink);
-				ContentHandler parser = new SAXRDFaParser(base, sink,
-						profileHandler, errorHandler, RDFaParser.UNKNOWN_XML);
-				reader.setContentHandler(parser);
-				reader.parse(new InputSource(r));
-			} catch (IOException e) {
-				errorHandler.fatalError(e);
-			} catch (URISyntaxException e) {
-				errorHandler.fatalError(e);
-			}
-		} catch (SAXException e) {
-			errorHandler.fatalError(e);
+			
+			// Parse document
+			TripleSink sink = new JenaTripleSink(model);
+			ErrorHandler errorHandler = new TripleErrorHandler(sink);
+			DOMRDFaParser.parse(document, base, sink,
+					profileHandler, errorHandler, RDFaParser.UNKNOWN_XML);
+		} catch (Exception exception) {
+			errorHandler.fatalError(exception);
 		}
 	}
 
-	/*
+	/**
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * com.hp.hpl.jena.rdf.model.RDFReader#read(com.hp.hpl.jena.rdf.model.Model,
-	 * java.io.Reader, java.lang.String)
+	 * @see com.hp.hpl.jena.rdf.model.RDFReader#read(com.hp.hpl.jena.rdf.model.Model,
+	 *      java.io.Reader, java.lang.String)
 	 */
 	public void read(Model model, Reader r, String base) {
 		// Not implemented
