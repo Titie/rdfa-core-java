@@ -339,7 +339,7 @@ public class ProcessingContext {
 					&& prefixMappings == parentContext.getPrefixMappings()) {
 				prefixMappings = new Registry(prefixMappings);
 			}
-			prefixMappings.set(Prefix, uri);
+			prefixMappings.set(Prefix.toLowerCase(), uri);
 		}
 	}
 
@@ -355,7 +355,7 @@ public class ProcessingContext {
 	 * @return
 	 */
 	public String resolveTerm(String Term) {
-		return termMappings.get(Term);
+		return termMappings.get(Term.toLowerCase());
 	}
 
 	/**
@@ -367,7 +367,7 @@ public class ProcessingContext {
 				&& parentContext.getTermMappings() == termMappings) {
 			termMappings = new Registry(termMappings);
 		}
-		termMappings.set(Term, uri);
+		termMappings.set(Term.toLowerCase(), uri);
 	}
 
 	/**
