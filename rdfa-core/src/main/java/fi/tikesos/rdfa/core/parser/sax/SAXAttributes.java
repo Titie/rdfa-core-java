@@ -1,6 +1,8 @@
-package fi.tikesos.rdfa.core.datatype;
+package fi.tikesos.rdfa.core.parser.sax;
 
 import org.xml.sax.Attributes;
+
+import fi.tikesos.rdfa.core.datatype.Location;
 
 /**
  * @author ssakorho

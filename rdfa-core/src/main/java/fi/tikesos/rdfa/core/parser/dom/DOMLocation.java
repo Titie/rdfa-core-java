@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package fi.tikesos.rdfa.core.datatype;
+package fi.tikesos.rdfa.core.parser.dom;
 
 import org.w3c.dom.Node;
+
+import fi.tikesos.rdfa.core.datatype.Location;
 
 /**
  * SAXLocation location

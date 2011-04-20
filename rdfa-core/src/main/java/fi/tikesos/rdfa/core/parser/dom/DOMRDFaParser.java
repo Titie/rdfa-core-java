@@ -1,4 +1,4 @@
-package fi.tikesos.rdfa.core.parser;
+package fi.tikesos.rdfa.core.parser.dom;
 
 import java.net.URISyntaxException;
 
@@ -6,9 +6,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 import fi.tikesos.rdfa.core.datatype.Attributes;
-import fi.tikesos.rdfa.core.datatype.DOMAttributes;
-import fi.tikesos.rdfa.core.datatype.DOMLocation;
 import fi.tikesos.rdfa.core.exception.ErrorHandler;
+import fi.tikesos.rdfa.core.parser.RDFaParser;
 import fi.tikesos.rdfa.core.profile.ProfileHandler;
 import fi.tikesos.rdfa.core.triple.TripleSink;
 
