@@ -13,6 +13,8 @@ public class DOMAttributes implements Attributes {
 	private NamedNodeMap attributes;
 
 	/**
+	 * Class constructor
+	 * 
 	 * @param attributes
 	 */
 	public DOMAttributes(NamedNodeMap attributes) {
