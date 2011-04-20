@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package fi.tikesos.rdfa.core.datatype;
+package fi.tikesos.rdfa.core.parser.sax;
+
+import fi.tikesos.rdfa.core.datatype.Location;
 
 /**
  * SAXLocation location

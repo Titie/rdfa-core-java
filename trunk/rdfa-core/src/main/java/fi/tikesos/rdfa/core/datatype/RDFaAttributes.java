@@ -42,6 +42,7 @@ public class RDFaAttributes {
 	private Location vocabLocation;
 	private String lang;
 	private Location langLocation;
+	private Attributes attributes;
 	
 	/**
 	 * Constructor
@@ -52,6 +53,7 @@ public class RDFaAttributes {
 		xmlns = new ArrayList<PrefixMapping>();
 		xmlnsLocation = new ArrayList<Location>();
 		prefix = new ArrayList<PrefixMapping>();
+		this.attributes = attributes;
 		
 		// Process attributes
 		for (int i = 0; i < attributes.getCount(); i++) {
@@ -332,5 +334,11 @@ public class RDFaAttributes {
 	 */
 	public Location getLangLocation() {
 		return langLocation;
+	}
+	/**
+	 * @return the attributes
+	 */
+	public Attributes getAttributes() {
+		return attributes;
 	}
 }

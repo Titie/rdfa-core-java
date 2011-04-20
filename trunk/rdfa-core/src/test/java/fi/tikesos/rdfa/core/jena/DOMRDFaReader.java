@@ -30,7 +30,7 @@ import com.hp.hpl.jena.rdf.model.RDFReader;
 
 import fi.tikesos.rdfa.core.exception.ErrorHandler;
 import fi.tikesos.rdfa.core.exception.TripleErrorHandler;
-import fi.tikesos.rdfa.core.parser.DOMRDFaParser;
+import fi.tikesos.rdfa.core.parser.dom.DOMRDFaParser;
 import fi.tikesos.rdfa.core.parser.RDFaParser;
 import fi.tikesos.rdfa.core.profile.ProfileHandler;
 import fi.tikesos.rdfa.core.profile.SimpleProfileHandler;

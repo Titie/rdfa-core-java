@@ -1,4 +1,4 @@
-package fi.tikesos.rdfa.core.parser;
+package fi.tikesos.rdfa.core.parser.sax;
 
 import java.net.URISyntaxException;
 
@@ -7,9 +7,8 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 
-import fi.tikesos.rdfa.core.datatype.SAXAttributes;
-import fi.tikesos.rdfa.core.datatype.SAXLocation;
 import fi.tikesos.rdfa.core.exception.ErrorHandler;
+import fi.tikesos.rdfa.core.parser.RDFaParser;
 import fi.tikesos.rdfa.core.profile.ProfileHandler;
 import fi.tikesos.rdfa.core.triple.TripleSink;
 

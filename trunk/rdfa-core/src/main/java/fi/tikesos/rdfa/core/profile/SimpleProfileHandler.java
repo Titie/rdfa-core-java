@@ -30,7 +30,7 @@ import fi.tikesos.rdfa.core.datatype.Language;
 import fi.tikesos.rdfa.core.datatype.Lexical;
 import fi.tikesos.rdfa.core.exception.NullErrorHandler;
 import fi.tikesos.rdfa.core.parser.RDFaParser;
-import fi.tikesos.rdfa.core.parser.SAXRDFaParser;
+import fi.tikesos.rdfa.core.parser.sax.SAXRDFaParser;
 import fi.tikesos.rdfa.core.triple.TripleSink;
 import fi.tikesos.rdfa.core.util.NullEntityResolver;
 

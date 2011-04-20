@@ -31,6 +31,7 @@ import fi.tikesos.rdfa.core.util.StringEscapeUtils;
  */
 public class LiteralCollector {
 	private Stack<Lexical> literalCollector;
+	private Stack<Attributes> attributes;
 	private Lexical xmlCollector;
 	private boolean implicitClose;
 	private int xmlCollectorDepth;
@@ -40,26 +41,29 @@ public class LiteralCollector {
 	 */
 	public LiteralCollector() {
 		literalCollector = new Stack<Lexical>();
+		attributes = new Stack<Attributes>();
 		xmlCollector = null;
 		xmlCollectorDepth = 0;
 		implicitClose = false;
 	}
 
 	/**
-	 * 
+	 * Start collecting literal
 	 */
 	public void startCollecting() {
 		literalCollector.push(new Lexical());
 	}
 
 	/**
-	 * 
+	 * Start collecting XML literal
 	 */
 	public void startCollectingXML() {
 		xmlCollector = new Lexical();
 	}
 
 	/**
+	 * Collect string to literal
+	 * 
 	 * @param toCollect
 	 * @param shouldEncode
 	 * @param location
@@ -80,6 +84,8 @@ public class LiteralCollector {
 	}
 
 	/**
+	 * Collect char array to literal
+	 * 
 	 * @param toCollect
 	 * @param start
 	 * @param length
@@ -103,6 +109,8 @@ public class LiteralCollector {
 	}
 
 	/**
+	 * Check if literal collector is collecting XML literal
+	 * 
 	 * @return
 	 */
 	public boolean isCollectingXML() {
@@ -110,6 +118,8 @@ public class LiteralCollector {
 	}
 
 	/**
+	 * Check if literal collector is collecting literal
+	 * 
 	 * @return
 	 */
 	public boolean isCollecting() {
@@ -117,6 +127,8 @@ public class LiteralCollector {
 	}
 
 	/**
+	 * Stop collecting literal
+	 * 
 	 * @return
 	 */
 	public Lexical stopCollecting() {
@@ -134,24 +146,30 @@ public class LiteralCollector {
 	}
 
 	/**
+	 * Collect start element
+	 * 
 	 * @param uri
 	 * @param localName
 	 * @param qName
-	 * @param atts
+	 * @param attributes
 	 * @param location
 	 * @return
 	 */
 	public boolean collectStartElement(String uri, String localName,
-			String qName, Attributes atts, Location location) {
+			String qName, Attributes attributes, Location location) {
 		boolean result = false;
+		this.attributes.push(attributes);
 		if (xmlCollector != null) {
+			if (xmlCollectorDepth == 0) {
+				// Merge xmlns, prefix and profile
+			}
 			xmlCollector.append("<");
 			xmlCollector.append(qName);
-			for (int i = 0; i < atts.getCount(); i++) {
+			for (int i = 0; i < attributes.getCount(); i++) {
 				xmlCollector.append(" ");
-				xmlCollector.append(atts.getQName(i));
+				xmlCollector.append(attributes.getQName(i));
 				xmlCollector.append("=\"");
-				StringEscapeUtils.escapeXML(atts.getValue(i), xmlCollector.getBuffer());
+				StringEscapeUtils.escapeXML(attributes.getValue(i), xmlCollector.getBuffer());
 				xmlCollector.append("\"");
 			}
 			xmlCollector.append(">");
@@ -164,6 +182,8 @@ public class LiteralCollector {
 	}
 
 	/**
+	 * Collect end element
+	 * 
 	 * @param uri
 	 * @param localName
 	 * @param qName
@@ -187,6 +207,7 @@ public class LiteralCollector {
 			result = true;
 		}
 		implicitClose = false;
+		attributes.pop();
 
 		return result;
 	}
