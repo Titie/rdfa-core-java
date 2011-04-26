@@ -320,25 +320,25 @@ public class ProcessingContext {
 	}
 
 	/**
-	 * @param Prefix
+	 * @param prefix
 	 * @return
 	 */
-	public String resolvePrefix(String Prefix) {
-		return prefixMappings.get(Prefix);
+	public String resolvePrefix(String prefix) {
+		return prefixMappings.get(prefix);
 	}
 
 	/**
-	 * @param Prefix
+	 * @param prefix
 	 * @param uri
 	 */
-	public void registerPrefix(String Prefix, String uri) {
-		if (Prefix.compareTo("_") != 0) {
+	public void registerPrefix(String prefix, String uri) {
+		if (prefix.compareTo("_") != 0) {
 			// '_' is prohibited namespace prefix
 			if (parentContext != null
 					&& prefixMappings == parentContext.getPrefixMappings()) {
 				prefixMappings = new Registry(prefixMappings);
 			}
-			prefixMappings.set(Prefix.toLowerCase(), uri);
+			prefixMappings.set(prefix.toLowerCase(), uri);
 		}
 	}
 
@@ -350,23 +350,23 @@ public class ProcessingContext {
 	}
 
 	/**
-	 * @param Term
+	 * @param term
 	 * @return
 	 */
-	public String resolveTerm(String Term) {
-		return termMappings.get(Term.toLowerCase());
+	public String resolveTerm(String term) {
+		return termMappings.get(term.toLowerCase());
 	}
 
 	/**
-	 * @param Term
+	 * @param term
 	 * @param uri
 	 */
-	public void registerTerm(String Term, String uri) {
+	public void registerTerm(String term, String uri) {
 		if (parentContext != null
 				&& parentContext.getTermMappings() == termMappings) {
 			termMappings = new Registry(termMappings);
 		}
-		termMappings.set(Term.toLowerCase(), uri);
+		termMappings.set(term.toLowerCase(), uri);
 	}
 
 	/**

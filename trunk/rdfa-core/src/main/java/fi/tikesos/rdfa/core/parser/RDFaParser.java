@@ -42,13 +42,11 @@ import fi.tikesos.rdfa.core.literal.LiteralCollector;
 /**
  * RDFaParserImpl
  * 
- * W3C RDFa 1.1 parser implementation for SAX.
- * 
- * Attributes from evaluationContext are not passed to literalCollector!
+ * W3C RDFa 1.1 parser implementation
  * 
  * @author Sami Korhonen, University Of Eastern Finland
  * @email sami.s.korhonen@uef.fi
- * @version 0.1
+ * @version 0.6
  */
 public class RDFaParser {
 	public static final int UNKNOWN_XML = 0;
@@ -123,13 +121,14 @@ public class RDFaParser {
 			Attributes attributes, Location location) {
 		depth++;
 
+		// Process attributes
+		RDFaAttributes rdfaAttributes = new RDFaAttributes(attributes);
+		
 		if (literalCollector.collectStartElement(uri, localName, qName,
-				attributes, location) == false) {
+				rdfaAttributes, location) == false) {
 			// Create new evaluation context
 			context = new ProcessingContext(context);
 
-			// Process attributes
-			RDFaAttributes rdfaAttributes = new RDFaAttributes(attributes);
 			if (depth == 1 && format == UNKNOWN_XML) {
 				if (XHTML_NS.equals(rdfaAttributes.getDefaultXmlns()) == true) {
 					// XHTML+RDFa extension
@@ -638,7 +637,7 @@ public class RDFaParser {
 					if (context.getContent() == null) {
 						// @content is not present
 						if (context.getDatatype() != null
-								&& context.getDatatype().equals(RDF_XMLLITERAL)) {
+								&& context.getDatatype().getValue().equals(RDF_XMLLITERAL)) {
 							literalCollector.startCollectingXML();
 						} else {
 							literalCollector.startCollecting();
