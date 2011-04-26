@@ -15,22 +15,28 @@
  */
 package fi.tikesos.rdfa.core.literal;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.Stack;
 
 import fi.tikesos.rdfa.core.datatype.Attributes;
 import fi.tikesos.rdfa.core.datatype.Lexical;
 import fi.tikesos.rdfa.core.datatype.Location;
+import fi.tikesos.rdfa.core.datatype.PrefixMapping;
+import fi.tikesos.rdfa.core.datatype.RDFaAttributes;
 import fi.tikesos.rdfa.core.util.StringEscapeUtils;
 
 /**
- * Helper class for collecting Literal and XML-Literal values.
+ * Helper class for collecting Literal and XMLLiteral values.
  * 
  * @author ssakorho
  * 
  */
 public class LiteralCollector {
 	private Stack<Lexical> literalCollector;
-	private Stack<Attributes> attributes;
+	private List<List<PrefixMapping>> inheritedNS;
 	private Lexical xmlCollector;
 	private boolean implicitClose;
 	private int xmlCollectorDepth;
@@ -40,8 +46,8 @@ public class LiteralCollector {
 	 */
 	public LiteralCollector() {
 		literalCollector = new Stack<Lexical>();
-		attributes = new Stack<Attributes>();
-		xmlCollector = null;
+		inheritedNS = new ArrayList<List<PrefixMapping>>();
+ 		xmlCollector = null;
 		xmlCollectorDepth = 0;
 		implicitClose = false;
 	}
@@ -150,30 +156,86 @@ public class LiteralCollector {
 	 * @param uri
 	 * @param localName
 	 * @param qName
-	 * @param attributes
+	 * @param rdfaAttributes
 	 * @param location
 	 * @return
 	 */
 	public boolean collectStartElement(String uri, String localName,
-			String qName, Attributes attributes, Location location) {
+			String qName, RDFaAttributes rdfaAttributes, Location location) {
 		boolean result = false;
-		this.attributes.push(attributes);
+		
 		if (xmlCollector != null) {
-			if (xmlCollectorDepth == 0) {
-				// Merge xmlns, prefix and profile
-			}
+			// <ELEMENT
 			xmlCollector.append("<");
 			xmlCollector.append(qName);
-			for (int i = 0; i < attributes.getCount(); i++) {
-				xmlCollector.append(" ");
-				xmlCollector.append(attributes.getQName(i));
-				xmlCollector.append("=\"");
-				StringEscapeUtils.escapeXML(attributes.getValue(i), xmlCollector.getBuffer());
-				xmlCollector.append("\"");
+			
+			Attributes attributes = rdfaAttributes.getAttributes();
+			if (xmlCollectorDepth == 0) {
+				// ATTRIBUTE="VALUE"
+				Set<String> registeredPrefix = new HashSet<String>();
+				for (int i = 0;i < attributes.getCount();i++) {
+					String attributeQName = attributes.getQName(i);
+					xmlCollector.append(" ");
+					xmlCollector.append(attributeQName);
+					xmlCollector.append("=\"");
+					StringEscapeUtils.escapeXML(attributes.getValue(i), xmlCollector.getBuffer());
+					xmlCollector.append("\"");
+					
+					if (attributeQName.startsWith("xmlns") == true) {
+						// Register namespace
+						if (attributeQName.startsWith("xmlns")) {
+							if (attributeQName.length() == 5) {
+								// @xmlns
+								registeredPrefix.add("");
+							} else if (attributeQName.charAt(5) == ':') {
+								// @xmlns:*
+								registeredPrefix.add(attributeQName.substring(6));
+							}
+						}						
+					}
+				}
+				
+				// Add inherited namespaces
+				for (int n = inheritedNS.size();n-- > 0;) {
+					for (PrefixMapping pm : inheritedNS.get(n)) {
+						if (registeredPrefix.contains(pm.getPrefix()) == false) {
+							// XMLNS="URI"
+							xmlCollector.append(" xmlns");
+							if (pm.getPrefix().isEmpty() == false) {
+								xmlCollector.append(":");
+								xmlCollector.append(pm.getPrefix());
+							}
+							xmlCollector.append("=\"");
+							StringEscapeUtils.escapeXML(pm.getURI(), xmlCollector.getBuffer());
+							xmlCollector.append("\"");
+							registeredPrefix.add(pm.getPrefix());
+						}
+					}
+				}
+			} else {
+				for (int i = 0; i < attributes.getCount();i++) {
+					// ATTRIBUTE="VALUE"
+					xmlCollector.append(" ");
+					xmlCollector.append(attributes.getQName(i));
+					xmlCollector.append("=\"");
+					StringEscapeUtils.escapeXML(attributes.getValue(i), xmlCollector.getBuffer());
+					xmlCollector.append("\"");
+				}
 			}
+			// >
 			xmlCollector.append(">");
 			xmlCollectorDepth++;
 			result = true;
+		} else {
+			// Save namespaces for XMLLiteral
+			List<PrefixMapping> pm = new ArrayList<PrefixMapping>(1 + (rdfaAttributes.getXmlns() != null ? rdfaAttributes.getXmlns().size() : 0));
+			if (rdfaAttributes.getDefaultXmlns() != null) {
+				pm.add(new PrefixMapping("", rdfaAttributes.getDefaultXmlns()));
+			}
+			if (rdfaAttributes.getXmlns() != null) {
+				pm.addAll(rdfaAttributes.getXmlns());
+			}
+			inheritedNS.add(pm);
 		}
 		implicitClose = true;
 
@@ -191,22 +253,25 @@ public class LiteralCollector {
 	public boolean collectCloseElement(String uri, String localName,
 			String qName) {
 		boolean result = false;
-		if (xmlCollector != null && xmlCollectorDepth > 0) {
-			if (implicitClose == true) {
-				// Implicit close
-				xmlCollector.setLength(xmlCollector.length() - 1);
-				xmlCollector.append(" />");
-			} else {
-				// Explicit close
-				xmlCollector.append("</");
-				xmlCollector.append(qName);
-				xmlCollector.append(">");
+		if (xmlCollector != null) {
+			if (xmlCollectorDepth > 0) {
+				if (implicitClose == true) {
+					// Implicit close
+					xmlCollector.setLength(xmlCollector.length() - 1);
+					xmlCollector.append(" />");
+				} else {
+					// Explicit close
+					xmlCollector.append("</");
+					xmlCollector.append(qName);
+					xmlCollector.append(">");
+				}
+				xmlCollectorDepth--;
+				result = true;
 			}
-			xmlCollectorDepth--;
-			result = true;
+		} else {
+			inheritedNS.remove(inheritedNS.size() - 1);
 		}
 		implicitClose = false;
-		attributes.pop();
 
 		return result;
 	}

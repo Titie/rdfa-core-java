@@ -44,7 +44,7 @@ public class JenaTripleSink implements TripleSink {
 		this.nodeMap = new HashMap<String, Resource>();
 	}
 
-	/*
+	/**
 	 * (non-Javadoc)
 	 * 
 	 * @see fi.tikesos.rdfa.core.triple.TripleSink#startRelativeTripleCaching()
@@ -52,7 +52,7 @@ public class JenaTripleSink implements TripleSink {
 	public void startRelativeTripleCaching() {
 	}
 
-	/*
+	/**
 	 * (non-Javadoc)
 	 * 
 	 * @see fi.tikesos.rdfa.core.triple.TripleSink#stopRelativeTripleCaching()
@@ -60,12 +60,11 @@ public class JenaTripleSink implements TripleSink {
 	public void stopRelativeTripleCaching() {
 	}
 
-	/*
+	/**
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * fi.tikesos.rdfa.core.triple.TripleSink#generateTriple(java.lang.String,
-	 * java.lang.String, java.lang.String)
+	 * @see fi.tikesos.rdfa.core.triple.TripleSink#generateTriple(java.lang.String,
+	 *      java.lang.String, java.lang.String)
 	 */
 	public void generateTriple(String subject, String predicate, String object) {
 		Resource s = createResource(subject);
@@ -74,13 +73,12 @@ public class JenaTripleSink implements TripleSink {
 		model.add(s, p, o);
 	}
 
-	/*
+	/**
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * fi.tikesos.rdfa.core.triple.TripleSink#generateTripleLiteral(java.lang
-	 * .String, java.lang.String, java.lang.String, java.lang.String,
-	 * java.lang.String)
+	 * @see fi.tikesos.rdfa.core.triple.TripleSink#generateTripleLiteral(java.lang
+	 *      .String, java.lang.String, java.lang.String, java.lang.String,
+	 *      java.lang.String)
 	 */
 	public void generateTripleLiteral(String subject, String predicate,
 			String lexical, String language, String datatype) {
@@ -88,22 +86,21 @@ public class JenaTripleSink implements TripleSink {
 		Property p = model.createProperty(predicate);
 		Literal o;
 		if (datatype != null) {
-			o = model.createTypedLiteral(lexical,
-					datatype);
+			o = model.createTypedLiteral(lexical, datatype);
 		} else if (language != null) {
 			o = model.createLiteral(lexical, language);
 		} else {
 			o = model.createLiteral(lexical);
 		}
 		model.add(s, p, o);
-		// System.out.println("<" + s + "> <" + p + "> <" + o + ">");
+//		System.out.println("<" + s + "> <" + p + "> <" + o + ">");
 	}
 
-	/*
+	/**
 	 * (non-Javadoc)
 	 * 
 	 * @see fi.tikesos.rdfa.TripleSink#generateTriple(fi.tikesos.rdfa.Component,
-	 * fi.tikesos.rdfa.Component, fi.tikesos.rdfa.Component)
+	 *      fi.tikesos.rdfa.Component, fi.tikesos.rdfa.Component)
 	 */
 	@Override
 	public void generateTriple(Component subject, Component predicate,
@@ -112,20 +109,19 @@ public class JenaTripleSink implements TripleSink {
 				object.getValue());
 	}
 
-	/*
+	/**
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * fi.tikesos.rdfa.TripleSink#generateTripleLiteral(fi.tikesos.rdfa.Component
-	 * , fi.tikesos.rdfa.Component, fi.tikesos.rdfa.Component,
-	 * fi.tikesos.rdfa.Component, fi.tikesos.rdfa.Component)
+	 * @see fi.tikesos.rdfa.TripleSink#generateTripleLiteral(fi.tikesos.rdfa.Component
+	 *      , fi.tikesos.rdfa.Component, fi.tikesos.rdfa.Component,
+	 *      fi.tikesos.rdfa.Component, fi.tikesos.rdfa.Component)
 	 */
 	@Override
 	public void generateTripleLiteral(Component subject, Component predicate,
 			Lexical lexical, Language language, Component datatype) {
 		generateTripleLiteral(subject.getValue(), predicate.getValue(),
-				lexical.getValue(), language != null ? language.getValue() : null,
-				datatype != null ? datatype.getValue() : null);
+				lexical.getValue(), language != null ? language.getValue()
+						: null, datatype != null ? datatype.getValue() : null);
 	}
 
 	/**
