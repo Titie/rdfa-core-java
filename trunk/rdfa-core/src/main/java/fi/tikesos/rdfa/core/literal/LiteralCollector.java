@@ -47,7 +47,7 @@ public class LiteralCollector {
 	public LiteralCollector() {
 		literalCollector = new Stack<Lexical>();
 		inheritedNS = new ArrayList<List<PrefixMapping>>();
- 		xmlCollector = null;
+		xmlCollector = null;
 		xmlCollectorDepth = 0;
 		implicitClose = false;
 	}
@@ -77,7 +77,8 @@ public class LiteralCollector {
 			Location location) {
 		if (xmlCollector != null) {
 			if (shouldEncode == true) {
-				StringEscapeUtils.escapeXML(toCollect, xmlCollector.getBuffer());
+				StringEscapeUtils
+						.escapeXML(toCollect, xmlCollector.getBuffer());
 			} else {
 				xmlCollector.append(toCollect);
 			}
@@ -163,24 +164,25 @@ public class LiteralCollector {
 	public boolean collectStartElement(String uri, String localName,
 			String qName, RDFaAttributes rdfaAttributes, Location location) {
 		boolean result = false;
-		
+
 		if (xmlCollector != null) {
 			// <ELEMENT
 			xmlCollector.append("<");
 			xmlCollector.append(qName);
-			
+
 			Attributes attributes = rdfaAttributes.getAttributes();
 			if (xmlCollectorDepth == 0) {
 				// ATTRIBUTE="VALUE"
 				Set<String> registeredPrefix = new HashSet<String>();
-				for (int i = 0;i < attributes.getCount();i++) {
+				for (int i = 0; i < attributes.getCount(); i++) {
 					String attributeQName = attributes.getQName(i);
 					xmlCollector.append(" ");
 					xmlCollector.append(attributeQName);
 					xmlCollector.append("=\"");
-					StringEscapeUtils.escapeXML(attributes.getValue(i), xmlCollector.getBuffer());
+					StringEscapeUtils.escapeXML(attributes.getValue(i),
+							xmlCollector.getBuffer());
 					xmlCollector.append("\"");
-					
+
 					if (attributeQName.startsWith("xmlns") == true) {
 						// Register namespace
 						if (attributeQName.startsWith("xmlns")) {
@@ -189,14 +191,15 @@ public class LiteralCollector {
 								registeredPrefix.add("");
 							} else if (attributeQName.charAt(5) == ':') {
 								// @xmlns:*
-								registeredPrefix.add(attributeQName.substring(6));
+								registeredPrefix.add(attributeQName
+										.substring(6));
 							}
-						}						
+						}
 					}
 				}
-				
+
 				// Add inherited namespaces
-				for (int n = inheritedNS.size();n-- > 0;) {
+				for (int n = inheritedNS.size(); n-- > 0;) {
 					for (PrefixMapping pm : inheritedNS.get(n)) {
 						if (registeredPrefix.contains(pm.getPrefix()) == false) {
 							// XMLNS="URI"
@@ -206,19 +209,21 @@ public class LiteralCollector {
 								xmlCollector.append(pm.getPrefix());
 							}
 							xmlCollector.append("=\"");
-							StringEscapeUtils.escapeXML(pm.getURI(), xmlCollector.getBuffer());
+							StringEscapeUtils.escapeXML(pm.getURI(),
+									xmlCollector.getBuffer());
 							xmlCollector.append("\"");
 							registeredPrefix.add(pm.getPrefix());
 						}
 					}
 				}
 			} else {
-				for (int i = 0; i < attributes.getCount();i++) {
+				for (int i = 0; i < attributes.getCount(); i++) {
 					// ATTRIBUTE="VALUE"
 					xmlCollector.append(" ");
 					xmlCollector.append(attributes.getQName(i));
 					xmlCollector.append("=\"");
-					StringEscapeUtils.escapeXML(attributes.getValue(i), xmlCollector.getBuffer());
+					StringEscapeUtils.escapeXML(attributes.getValue(i),
+							xmlCollector.getBuffer());
 					xmlCollector.append("\"");
 				}
 			}
@@ -228,7 +233,9 @@ public class LiteralCollector {
 			result = true;
 		} else {
 			// Save namespaces for XMLLiteral
-			List<PrefixMapping> pm = new ArrayList<PrefixMapping>(1 + (rdfaAttributes.getXmlns() != null ? rdfaAttributes.getXmlns().size() : 0));
+			List<PrefixMapping> pm = new ArrayList<PrefixMapping>(
+					1 + (rdfaAttributes.getXmlns() != null ? rdfaAttributes
+							.getXmlns().size() : 0));
 			if (rdfaAttributes.getDefaultXmlns() != null) {
 				pm.add(new PrefixMapping("", rdfaAttributes.getDefaultXmlns()));
 			}
