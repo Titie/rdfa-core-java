@@ -1,9 +1,22 @@
+/**
+ * Copyright (C) 2011 ssakorho <sami.s.korhonen@uef.fi>
+ *
+ * Licensed under the GNU Lesser General Public Licence, Version 3
+ * (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *         http://www.gnu.org/copyleft/lesser.html
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package fi.tikesos.rdfa.core.datatype;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import fi.tikesos.rdfa.core.parser.RDFaParser;
 
 /**
  * @author ssakorho
@@ -58,88 +71,125 @@ public class RDFaAttributes {
 		// Process attributes
 		for (int i = 0; i < attributes.getCount(); i++) {
 			String attributeQName = attributes.getQName(i);
-			if ("vocab".equals(attributeQName) == true) {
-				// 2.
-				// @vocab
-				vocab = attributes.getValue(i);
-				vocabLocation = attributes.getLocation(i);
-			} else if ("profile".equals(attributeQName) == true) {
-				// @profile
-				profile = attributes.getValue(i).trim()
-						.split("\\s");
-				profileLocation = attributes.getLocation(i);
-			} else if ("prefix".equals(attributeQName) == true) {
-				// @prefix
-				String[] prefix = attributes.getValue(i).trim().split("\\s+");
-				for (int n = 0; n < prefix.length; n += 2) {
-					if (prefix[n].endsWith(":") == true) {
-						this.prefix.add
-								(new PrefixMapping(
-										prefix[n].substring(0,
-												prefix[n].length() - 1),
-										prefix[n + 1]));
-					} // Else exception?
+			switch (attributeQName.charAt(0)) {
+			case 'a':
+				if ("about".equals(attributeQName) == true) {
+					// @about
+					about = attributes.getValue(i);
+					aboutLocation = attributes.getLocation(i);
 				}
-				prefixLocation = attributes.getLocation(i);
-			} else if (attributeQName.startsWith("xmlns:")) {
-				// @xmlns:*
-				xmlns.add(new PrefixMapping(
-						attributeQName.substring(6), attributes.getValue(i)));
-				xmlnsLocation.add(attributes.getLocation(i));
-			} else if ("lang".equals(attributeQName) == true
-					|| (RDFaParser.XML_NS.equals(attributes.getURI(i)) == true && "lang"
-							.equals(attributes.getLocalName(i)) == true)) {
-				// @lang or @xml:lang
-				lang = attributes.getValue(i);
-				langLocation = attributes.getLocation(i);
-			} else if ("rev".equals(attributeQName) == true) {
-				// @rev
-				rev = attributes.getValue(i).trim()
-						.split("\\s+");
-				revLocation = attributes.getLocation(i);
-			} else if ("rel".equals(attributeQName) == true) {
-				// @rel
-				rel = attributes.getValue(i).trim()
-						.split("\\s+");
-				relLocation = attributes.getLocation(i);
-		} else if ("about".equals(attributeQName) == true) {
-				// @about
-				about = attributes.getValue(i);
-				aboutLocation = attributes.getLocation(i);
-			} else if ("src".equals(attributeQName) == true) {
-				// @src
-				src = attributes.getValue(i);
-				srcLocation = attributes.getLocation(i);
-			} else if ("href".equals(attributeQName) == true) {
-				// @href
-				href = attributes.getValue(i);
-				hrefLocation = attributes.getLocation(i);
-			} else if ("typeof".equals(attributeQName) == true) {
-				// @typeof
-				typeof = attributes.getValue(i).trim()
-						.split("\\s+");
-				typeofLocation = attributes.getLocation(i);
-			} else if ("property".equals(attributeQName) == true) {
-				// @property
-				property = attributes.getValue(i).trim()
-						.split("\\s+");
-				propertyLocation = attributes.getLocation(i);
-			} else if ("resource".equals(attributeQName) == true) {
-				// @resource
-				resource = attributes.getValue(i);
-				resourceLocation = attributes.getLocation(i);
-			} else if ("content".equals(attributeQName) == true) {
-				// @content
-				content = attributes.getValue(i);
-				contentLocation = attributes.getLocation(i);
-			} else if ("datatype".equals(attributeQName) == true) {
-				// @datatype
-				datatype = attributes.getValue(i);
-				datatypeLocation = attributes.getLocation(i);
-			} else if ("xmlns".equals(attributeQName) == true) {
-				// @xmlns
-				defaultXmlns = attributes.getValue(i);
-				defaultXmlnsLocation = attributes.getLocation(i);
+				break;
+			case 'c':
+				if ("content".equals(attributeQName) == true) {
+					// @content
+					content = attributes.getValue(i);
+					contentLocation = attributes.getLocation(i);
+				}
+				break;
+			case 'd':
+				if ("datatype".equals(attributeQName) == true) {
+					// @datatype
+					datatype = attributes.getValue(i);
+					datatypeLocation = attributes.getLocation(i);
+				}
+				break;
+			case 'h':
+				if ("href".equals(attributeQName) == true) {
+					// @href
+					href = attributes.getValue(i);
+					hrefLocation = attributes.getLocation(i);
+				}
+				break;
+			case 'l':
+				if ("lang".equals(attributeQName) == true) {
+					// @lang or @xml:lang
+					lang = attributes.getValue(i);
+					langLocation = attributes.getLocation(i);
+				}
+				break;
+			case 'p':
+				if ("profile".equals(attributeQName) == true) {
+					// @profile
+					profile = attributes.getValue(i).trim()
+							.split("\\s");
+					profileLocation = attributes.getLocation(i);
+				} else if ("prefix".equals(attributeQName) == true) {
+					// @prefix
+					String[] prefix = attributes.getValue(i).trim().split("\\s+");
+					for (int n = 0; n < prefix.length; n += 2) {
+						if (prefix[n].endsWith(":") == true) {
+							this.prefix.add
+									(new PrefixMapping(
+											prefix[n].substring(0,
+													prefix[n].length() - 1),
+											prefix[n + 1]));
+						} // Else exception?
+					}
+					prefixLocation = attributes.getLocation(i);
+				} else if ("property".equals(attributeQName) == true) {
+					// @property
+					property = attributes.getValue(i).trim()
+							.split("\\s+");
+					propertyLocation = attributes.getLocation(i);
+				}
+				break;
+			case 'r':
+				if ("rev".equals(attributeQName) == true) {
+					// @rev
+					rev = attributes.getValue(i).trim()
+							.split("\\s+");
+					revLocation = attributes.getLocation(i);
+				} else if ("rel".equals(attributeQName) == true) {
+					// @rel
+					rel = attributes.getValue(i).trim()
+							.split("\\s+");
+					relLocation = attributes.getLocation(i);
+				} else if ("resource".equals(attributeQName) == true) {
+					// @resource
+					resource = attributes.getValue(i);
+					resourceLocation = attributes.getLocation(i);
+				}
+				break;
+			case 's':
+				if ("src".equals(attributeQName) == true) {
+					// @src
+					src = attributes.getValue(i);
+					srcLocation = attributes.getLocation(i);
+				}
+				break;
+			case 't':
+				if ("typeof".equals(attributeQName) == true) {
+					// @typeof
+					typeof = attributes.getValue(i).trim()
+							.split("\\s+");
+					typeofLocation = attributes.getLocation(i);
+				}
+				break;
+			case 'v':
+				if ("vocab".equals(attributeQName) == true) {
+					// @vocab
+					vocab = attributes.getValue(i);
+					vocabLocation = attributes.getLocation(i);
+				}
+				break;
+			case 'x':
+				if (attributeQName.startsWith("xmlns")) {
+					if (attributeQName.length() == 5) {
+						// @xmlns
+						defaultXmlns = attributes.getValue(i);
+						defaultXmlnsLocation = attributes.getLocation(i);
+					} else if (attributeQName.charAt(5) == ':') {
+						// @xmlns:*
+						xmlns.add(new PrefixMapping(
+								attributeQName.substring(6), attributes.getValue(i)));
+						xmlnsLocation.add(attributes.getLocation(i));
+					}
+				} else if ("xml:lang".equals(attributeQName)) {
+					// @xml:lang
+					lang = attributes.getValue(i);
+					langLocation = attributes.getLocation(i);
+				}
+				break;
 			}
 		}
 	}
