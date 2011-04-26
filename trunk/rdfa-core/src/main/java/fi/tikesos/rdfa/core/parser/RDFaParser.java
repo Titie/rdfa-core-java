@@ -17,6 +17,7 @@ package fi.tikesos.rdfa.core.parser;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -57,6 +58,7 @@ public class RDFaParser {
 	public static final String XML_NS = "http://www.w3.org/XML/1998/namespace";
 	public static final String RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 	public static final String RDF_XMLLITERAL = RDF_NS + "XMLLiteral";
+	public static final String RDFA_PROFILE = "http://www.w3.org/profile/rdfa-1.1";
 	private int format;
 	private int depth;
 	private boolean lookForBase;
@@ -123,7 +125,7 @@ public class RDFaParser {
 
 		// Process attributes
 		RDFaAttributes rdfaAttributes = new RDFaAttributes(attributes);
-		
+
 		if (literalCollector.collectStartElement(uri, localName, qName,
 				rdfaAttributes, location) == false) {
 			// Create new evaluation context
@@ -157,29 +159,20 @@ public class RDFaParser {
 						rdfaAttributes.getContentLocation()));
 			}
 
+			// List of profiles to load
+			List<String> profilesToLoad = new ArrayList<String>();
+
+			if (depth == 1) {
+				// Default vocabulary
+				profilesToLoad.add(RDFA_PROFILE);
+			}
+
 			if (format == XHTML_RDFA) {
 				// From XHTML
 				switch (depth) {
 				case 1:
 					// Default vocabulary for XHTML
-					if (profileHandler != null) {
-						try {
-							processProfile(profileHandler
-									.loadProfile(XHTML_PROFILE));
-						} catch (Exception exception) {
-							// Failed profile causes all subsequent elements
-							// to be ignored!
-							errorHandler.fatalError(new ProfileLoadException(
-									XHTML_PROFILE, "profile", location,
-									exception));
-							context.setProfileFailed(true);
-						}
-					} else {
-						errorHandler
-								.fatalError(new ProfileHandlerNotDefinedException(
-										XHTML_PROFILE, "profile", location));
-						context.setProfileFailed(true);
-					}
+					profilesToLoad.add(XHTML_PROFILE);
 					break;
 				case 2:
 					if ("head".equals(localName) == true
@@ -207,29 +200,25 @@ public class RDFaParser {
 			}
 
 			if (rdfaAttributes.getProfile() != null) {
+				// Add local profiles
+				profilesToLoad
+						.addAll(Arrays.asList(rdfaAttributes.getProfile()));
+			}
+
+			if (profilesToLoad.isEmpty() == false && profileHandler != null) {
 				// Load profiles
-				if (profileHandler != null) {
-					for (String profileURI : rdfaAttributes.getProfile()) {
-						try {
-							processProfile(profileHandler
-									.loadProfile(profileURI));
-						} catch (Exception exception) {
-							// Failed profile causes all subsequent elements
-							// to be ignored!
-							errorHandler.fatalError(new ProfileLoadException(
-									profileURI, "profile", rdfaAttributes
-											.getProfileLocation(), exception));
-							context.setProfileFailed(true);
-							break;
-						}
+				for (String profileURI : profilesToLoad) {
+					try {
+						processProfile(profileHandler.loadProfile(profileURI));
+					} catch (Exception exception) {
+						// Failed profile causes all subsequent elements
+						// to be ignored!
+						errorHandler.fatalError(new ProfileLoadException(
+								profileURI, "profile", rdfaAttributes
+										.getProfileLocation(), exception));
+						context.setProfileFailed(true);
+						break;
 					}
-				} else {
-					// Can not continue processing
-					errorHandler
-							.fatalError(new ProfileHandlerNotDefinedException(
-									rdfaAttributes.getProfile()[0], "profile",
-									rdfaAttributes.getProfileLocation()));
-					context.setProfileFailed(true);
 				}
 			}
 
@@ -637,7 +626,8 @@ public class RDFaParser {
 					if (context.getContent() == null) {
 						// @content is not present
 						if (context.getDatatype() != null
-								&& context.getDatatype().getValue().equals(RDF_XMLLITERAL)) {
+								&& context.getDatatype().getValue()
+										.equals(RDF_XMLLITERAL)) {
 							literalCollector.startCollectingXML();
 						} else {
 							literalCollector.startCollecting();
