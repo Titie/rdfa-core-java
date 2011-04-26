@@ -33,7 +33,6 @@ import fi.tikesos.rdfa.core.exception.ErrorHandler;
 import fi.tikesos.rdfa.core.exception.NotCURIEorURIException;
 import fi.tikesos.rdfa.core.exception.NotTERMorCURIEorAbsURIException;
 import fi.tikesos.rdfa.core.exception.NotURIException;
-import fi.tikesos.rdfa.core.exception.ProfileHandlerNotDefinedException;
 import fi.tikesos.rdfa.core.exception.ProfileLoadException;
 import fi.tikesos.rdfa.core.profile.Profile;
 import fi.tikesos.rdfa.core.profile.ProfileHandler;
