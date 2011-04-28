@@ -16,12 +16,12 @@
 package fi.tikesos.rdfa.core.datatype;
 
 /**
- * Lexical container class.
+ * Literal container class.
  * 
  * @author ssakorho
  *
  */
-public class Lexical {
+public class Literal {
 	private StringBuffer buffer;
 	private String value;
 	private Location location;
@@ -29,7 +29,7 @@ public class Lexical {
 	/**
 	 * Constructor
 	 */
-	public Lexical() {
+	public Literal() {
 		this.buffer = new StringBuffer();
 		this.location = null;
 		this.value = null;
@@ -41,7 +41,7 @@ public class Lexical {
 	 * @param value
 	 * @param location
 	 */
-	public Lexical(String value, Location location) {
+	public Literal(String value, Location location) {
 		this.buffer = null;
 		this.location = location;
 		this.value = value;
@@ -64,8 +64,8 @@ public class Lexical {
 	/**
 	 * @param buffer
 	 */
-	public void append(Lexical lexical) {
-		buffer.append(lexical.getBuffer());
+	public void append(Literal literal) {
+		buffer.append(literal.getBuffer());
 	}
 	
 	/**

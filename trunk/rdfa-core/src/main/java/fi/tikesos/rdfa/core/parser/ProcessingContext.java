@@ -25,7 +25,7 @@ import fi.tikesos.rdfa.core.datatype.BaseURI;
 import fi.tikesos.rdfa.core.datatype.IncompleteTriple;
 import fi.tikesos.rdfa.core.datatype.Component;
 import fi.tikesos.rdfa.core.datatype.Language;
-import fi.tikesos.rdfa.core.datatype.Lexical;
+import fi.tikesos.rdfa.core.datatype.Literal;
 import fi.tikesos.rdfa.core.datatype.Location;
 import fi.tikesos.rdfa.core.registry.Registry;
 
@@ -44,7 +44,7 @@ public class ProcessingContext {
 	private boolean skipElement = false;
 	private Component newSubject = null;
 	private Component currentObjectResource = null;
-	private Lexical content = null;
+	private Literal content = null;
 	private String[] property = null;
 	private Location propertyLocation = null;
 	private Component datatype = null;
@@ -72,6 +72,8 @@ public class ProcessingContext {
 		this.prefixMappings = new Registry();
 		this.termMappings = new Registry();
 		this.blankNodeHandler = new BlankNodeHandler();
+		// Register default prefix
+		registerPrefix("", "http://www.w3.org/1999/xhtml/vocab#");
 	}
 
 	/**
@@ -127,6 +129,7 @@ public class ProcessingContext {
 			// this.termMappings = localContext.getTermMappings();
 			this.base = localContext.getBase();
 		}
+		this.skipElement = false;
 		this.profileFailed = localContext.isProfileFailed();
 		this.parentContext = localContext;
 		this.blankNodeHandler = localContext.getBlankNodeHandler();
@@ -226,7 +229,7 @@ public class ProcessingContext {
 	/**
 	 * @return the content
 	 */
-	public Lexical getContent() {
+	public Literal getContent() {
 		return content;
 	}
 
@@ -234,7 +237,7 @@ public class ProcessingContext {
 	 * @param content
 	 *            the content to set
 	 */
-	public void setContent(Lexical content) {
+	public void setContent(Literal content) {
 		this.content = content;
 	}
 
@@ -348,13 +351,31 @@ public class ProcessingContext {
 	public Registry getPrefixMappings() {
 		return prefixMappings;
 	}
+	
+	/**
+	 * @param term
+	 * @return
+	 */
+	public boolean isTermRegistered(String term) {
+		return termMappings.get(term) != null;
+	}
 
 	/**
 	 * @param term
 	 * @return
 	 */
 	public String resolveTerm(String term) {
-		return termMappings.get(term.toLowerCase());
+		String uri = termMappings.get(term);
+		if (uri == null) {
+			// Falling to case-insensitive matching (slow!)
+			for (String registeredTerm : termMappings.getMappings().keySet()) {
+				if (term.equalsIgnoreCase(registeredTerm) == true) {
+					uri = termMappings.get(registeredTerm);
+					break;
+				}
+			}
+		}
+		return uri;
 	}
 
 	/**
@@ -366,7 +387,7 @@ public class ProcessingContext {
 				&& parentContext.getTermMappings() == termMappings) {
 			termMappings = new Registry(termMappings);
 		}
-		termMappings.set(term.toLowerCase(), uri);
+		termMappings.set(term, uri);
 	}
 
 	/**
@@ -451,19 +472,6 @@ public class ProcessingContext {
 	}
 
 	/**
-	 * @param term
-	 * @return
-	 * @throws URISyntaxException
-	 */
-	private Component expandDefaultPrefix(String term)
-			throws URISyntaxException {
-		if (term.isEmpty() == false && XMLChar.isValidNCName(term) == false) {
-			throw new URISyntaxException(term, "not a valid term");
-		}
-		return new Component("http://www.w3.org/1999/xhtml/vocab#" + term);
-	}
-
-	/**
 	 * @param colon
 	 * @param CURIEorAbsURI
 	 * @return
@@ -472,29 +480,26 @@ public class ProcessingContext {
 	private Component expandCURIEorAbsURI(int colon, String CURIEorAbsURI)
 			throws URISyntaxException {
 		Component uri = null;
-		if (colon == 0) {
-			uri = expandDefaultPrefix(CURIEorAbsURI.substring(1));
+		
+		// Perhaps a CURIE
+		String prefixURI = resolvePrefix(CURIEorAbsURI.substring(0, colon));
+		if (prefixURI != null) {
+			uri = new Component(base, new URI(prefixURI
+					+ CURIEorAbsURI.substring(colon + 1)));
 		} else {
-			// Perhaps a CURIE
-			String prefixURI = resolvePrefix(CURIEorAbsURI.substring(0, colon));
-			if (prefixURI != null) {
-				uri = new Component(base, new URI(prefixURI
-						+ CURIEorAbsURI.substring(colon + 1)));
+			// Prefix not registered, not a CURIE
+			if (colon == 1 && CURIEorAbsURI.charAt(0) == '_') {
+				// Blank node "_:*"
+				uri = new Component(
+						blankNodeHandler.mapBlankNode(CURIEorAbsURI));
 			} else {
-				// Prefix not registered, not a CURIE
-				if (colon == 1 && CURIEorAbsURI.charAt(0) == '_') {
-					// Perhaps Blank node "_:*"
-					uri = new Component(
-							blankNodeHandler.mapBlankNode(CURIEorAbsURI));
-				} else {
-					// Perhaps an absolute uri
-					URI absoluteURI = new URI(CURIEorAbsURI);
-					if (absoluteURI.isAbsolute() == false) {
-						throw new URISyntaxException(CURIEorAbsURI,
-								"not an absolute uri");
-					}
-					uri = new Component(CURIEorAbsURI);
+				// Perhaps an absolute uri
+				URI absoluteURI = new URI(CURIEorAbsURI);
+				if (absoluteURI.isAbsolute() == false) {
+					throw new URISyntaxException(CURIEorAbsURI,
+							"not an absolute uri");
 				}
+				uri = new Component(CURIEorAbsURI);
 			}
 		}
 		return uri;

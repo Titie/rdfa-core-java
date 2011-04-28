@@ -13,23 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package fi.tikesos.rdfa.core.triple;
+package fi.tikesos.rdfa.core.literal;
 
-import fi.tikesos.rdfa.core.datatype.Component;
-import fi.tikesos.rdfa.core.datatype.Language;
 import fi.tikesos.rdfa.core.datatype.Literal;
 
 /**
- * TripleSink interface
+ * XMLLiteral wrapper class.
  * 
  * @author ssakorho
  *
  */
-public interface TripleSink {
-	public void startRelativeTripleCaching();
-	public void stopRelativeTripleCaching();
-	public void generateTriple(Component subject, Component predicate, Component object);
-	public void generateTriple(String subject, String predicate, String object);
-	public void generateTripleLiteral(Component subject, Component predicate, Literal literal, Language language, Component datatype);
-	public void generateTripleLiteral(String subject, String predicate, String lexical, String language, String datatype);
+public class XMLLiteralWrapper {
+	private Literal literal;
+	private int depth;
+	
+	/**
+	 * Constructor
+	 */
+	public XMLLiteralWrapper(Literal literal, int depth) {
+		this.literal = literal;
+		this.depth = depth;
+	}
+	
+	/**
+	 * @return
+	 */
+	public Literal getXMLLiteral() {
+		return literal;
+	}
+	
+	/**
+	 * @return
+	 */
+	public int getDepth() {
+		return depth;
+	}
 }
