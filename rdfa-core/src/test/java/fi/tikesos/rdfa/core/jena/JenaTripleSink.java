@@ -18,14 +18,13 @@ package fi.tikesos.rdfa.core.jena;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.Resource;
 
 import fi.tikesos.rdfa.core.datatype.Component;
 import fi.tikesos.rdfa.core.datatype.Language;
-import fi.tikesos.rdfa.core.datatype.Lexical;
+import fi.tikesos.rdfa.core.datatype.Literal;
 import fi.tikesos.rdfa.core.triple.TripleSink;
 
 /**
@@ -71,6 +70,7 @@ public class JenaTripleSink implements TripleSink {
 		Property p = model.createProperty(predicate);
 		Resource o = createResource(object);
 		model.add(s, p, o);
+//		System.out.println("+ <" + s + "> <" + p + "> <" + o + ">");
 	}
 
 	/**
@@ -84,7 +84,7 @@ public class JenaTripleSink implements TripleSink {
 			String lexical, String language, String datatype) {
 		Resource s = createResource(subject);
 		Property p = model.createProperty(predicate);
-		Literal o;
+		com.hp.hpl.jena.rdf.model.Literal o;
 		if (datatype != null) {
 			o = model.createTypedLiteral(lexical, datatype);
 		} else if (language != null) {
@@ -93,7 +93,7 @@ public class JenaTripleSink implements TripleSink {
 			o = model.createLiteral(lexical);
 		}
 		model.add(s, p, o);
-//		System.out.println("<" + s + "> <" + p + "> <" + o + ">");
+//		System.out.println("+ <" + s + "> <" + p + "> <" + o + ">");
 	}
 
 	/**
@@ -118,9 +118,9 @@ public class JenaTripleSink implements TripleSink {
 	 */
 	@Override
 	public void generateTripleLiteral(Component subject, Component predicate,
-			Lexical lexical, Language language, Component datatype) {
+			Literal literal, Language language, Component datatype) {
 		generateTripleLiteral(subject.getValue(), predicate.getValue(),
-				lexical.getValue(), language != null ? language.getValue()
+				literal.getValue(), language != null ? language.getValue()
 						: null, datatype != null ? datatype.getValue() : null);
 	}
 

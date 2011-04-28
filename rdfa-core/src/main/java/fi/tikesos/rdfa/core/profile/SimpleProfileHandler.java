@@ -26,7 +26,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
 
 import fi.tikesos.rdfa.core.datatype.Component;
 import fi.tikesos.rdfa.core.datatype.Language;
-import fi.tikesos.rdfa.core.datatype.Lexical;
+import fi.tikesos.rdfa.core.datatype.Literal;
 import fi.tikesos.rdfa.core.exception.NullErrorHandler;
 import fi.tikesos.rdfa.core.parser.RDFaParser;
 import fi.tikesos.rdfa.core.parser.sax.SAXRDFaParser;
@@ -217,7 +217,7 @@ public class SimpleProfileHandler implements ProfileHandler {
 		 * fi.tikesos.rdfa.core.datatype.Component)
 		 */
 		public void generateTripleLiteral(Component subject,
-				Component predicate, Lexical lexical, Language language,
+				Component predicate, Literal literal, Language language,
 				Component datatype) {
 			// Store triple to map, if it's of known type
 			String type = null;
@@ -228,7 +228,7 @@ public class SimpleProfileHandler implements ProfileHandler {
 			} else if ((RDFA_NS + "term").equals(predicate.getValue()) == true) {
 				type = "term";
 			} else if ((RDFA_NS + "vocabulary").equals(predicate.getValue()) == true) {
-				defaultVocabulary = lexical.getValue();
+				defaultVocabulary = literal.getValue();
 			}
 			if (type != null) {
 				Map<String, String> valueMap = tripleMap
@@ -237,7 +237,7 @@ public class SimpleProfileHandler implements ProfileHandler {
 					valueMap = new HashMap<String, String>();
 					tripleMap.put(subject.getValue(), valueMap);
 				}
-				valueMap.put(type, lexical.getValue());
+				valueMap.put(type, literal.getValue());
 			}
 		}
 

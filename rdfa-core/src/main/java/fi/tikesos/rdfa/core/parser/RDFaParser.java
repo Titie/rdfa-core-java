@@ -25,7 +25,7 @@ import fi.tikesos.rdfa.core.datatype.Attributes;
 import fi.tikesos.rdfa.core.datatype.IncompleteTriple;
 import fi.tikesos.rdfa.core.datatype.Component;
 import fi.tikesos.rdfa.core.datatype.Language;
-import fi.tikesos.rdfa.core.datatype.Lexical;
+import fi.tikesos.rdfa.core.datatype.Literal;
 import fi.tikesos.rdfa.core.datatype.Location;
 import fi.tikesos.rdfa.core.datatype.PrefixMapping;
 import fi.tikesos.rdfa.core.datatype.RDFaAttributes;
@@ -100,7 +100,7 @@ public class RDFaParser {
 		// Term mappings
 		for (Entry<String, String> p : profile.getTermMappings().entrySet()) {
 			// May not overwrite existing term mapping
-			if (context.resolveTerm(p.getKey()) == null) {
+			if (context.isTermRegistered(p.getKey()) == false) {
 				context.registerTerm(p.getKey(), p.getValue());
 			}
 		}
@@ -125,512 +125,511 @@ public class RDFaParser {
 		// Process attributes
 		RDFaAttributes rdfaAttributes = new RDFaAttributes(attributes);
 
-		if (literalCollector.collectStartElement(uri, localName, qName,
-				rdfaAttributes, location) == false) {
-			// Create new evaluation context
-			context = new ProcessingContext(context);
+		literalCollector.collectStartElement(uri, localName, qName,
+				rdfaAttributes, location);
+		// Create new evaluation context
+		context = new ProcessingContext(context);
 
-			if (depth == 1 && format == UNKNOWN_XML) {
-				if (XHTML_NS.equals(rdfaAttributes.getDefaultXmlns()) == true) {
-					// XHTML+RDFa extension
-					format = XHTML_RDFA;
+		if (depth == 1 && format == UNKNOWN_XML) {
+			if (XHTML_NS.equals(rdfaAttributes.getDefaultXmlns()) == true) {
+				// XHTML+RDFa extension
+				format = XHTML_RDFA;
+				lookForBase = true;
+			} else {
+				// XML-RDFa core
+				format = XML_RDFA;
+				lookForBase = false;
+			}
+		}
+		if (rdfaAttributes.getLang() != null) {
+			// Set language
+			context.setLanguage(new Language(rdfaAttributes.getLang(),
+					rdfaAttributes.getLangLocation()));
+		}
+		if (rdfaAttributes.getProperty() != null) {
+			// Set property
+			context.setProperty(rdfaAttributes.getProperty());
+			context.setPropertyLocation(rdfaAttributes
+					.getPropertyLocation());
+		}
+		if (rdfaAttributes.getContent() != null) {
+			// Set content
+			context.setContent(new Literal(rdfaAttributes.getContent(),
+					rdfaAttributes.getContentLocation()));
+		}
+
+		// List of profiles to load
+		List<String> profilesToLoad = new ArrayList<String>();
+
+		if (depth == 1) {
+			// Default vocabulary
+			profilesToLoad.add(RDFA_PROFILE);
+		}
+
+		if (format == XHTML_RDFA) {
+			// From XHTML
+			switch (depth) {
+			case 1:
+				// Default vocabulary for XHTML
+				profilesToLoad.add(XHTML_PROFILE);
+				break;
+			case 2:
+				if ("head".equals(localName) == true
+						&& XHTML_NS.equals(uri) == true) {
+					// Start looking for base
 					lookForBase = true;
-				} else {
-					// XML-RDFa core
-					format = XML_RDFA;
-					lookForBase = false;
+					tripleSink.startRelativeTripleCaching();
 				}
-			}
-			if (rdfaAttributes.getLang() != null) {
-				// Set language
-				context.setLanguage(new Language(rdfaAttributes.getLang(),
-						rdfaAttributes.getLangLocation()));
-			}
-			if (rdfaAttributes.getProperty() != null) {
-				// Set property
-				context.setProperty(rdfaAttributes.getProperty());
-				context.setPropertyLocation(rdfaAttributes
-						.getPropertyLocation());
-			}
-			if (rdfaAttributes.getContent() != null) {
-				// Set content
-				context.setContent(new Lexical(rdfaAttributes.getContent(),
-						rdfaAttributes.getContentLocation()));
-			}
-
-			// List of profiles to load
-			List<String> profilesToLoad = new ArrayList<String>();
-
-			if (depth == 1) {
-				// Default vocabulary
-				profilesToLoad.add(RDFA_PROFILE);
-			}
-
-			if (format == XHTML_RDFA) {
-				// From XHTML
-				switch (depth) {
-				case 1:
-					// Default vocabulary for XHTML
-					profilesToLoad.add(XHTML_PROFILE);
-					break;
-				case 2:
-					if ("head".equals(localName) == true
-							&& XHTML_NS.equals(uri) == true) {
-						// Start looking for base
-						lookForBase = true;
-						tripleSink.startRelativeTripleCaching();
-					}
-					break;
-				case 3:
-					if (lookForBase == true && "base".equals(localName) == true
-							&& XHTML_NS.equals(uri) == true) {
-						// Set base to @href
-						try {
-							context.setBase(rdfaAttributes.getHref());
-						} catch (Exception exception) {
-							errorHandler
-									.warning(new NotURIException("href",
-											rdfaAttributes.getHrefLocation(),
-											exception));
-						}
-					}
-					break;
-				}
-			}
-
-			if (rdfaAttributes.getProfile() != null) {
-				// Add local profiles
-				profilesToLoad
-						.addAll(Arrays.asList(rdfaAttributes.getProfile()));
-			}
-
-			if (profilesToLoad.isEmpty() == false && profileHandler != null) {
-				// Load profiles
-				for (String profileURI : profilesToLoad) {
+				break;
+			case 3:
+				if (lookForBase == true && "base".equals(localName) == true
+						&& XHTML_NS.equals(uri) == true) {
+					// Set base to @href
 					try {
-						processProfile(profileHandler.loadProfile(profileURI));
-					} catch (Exception exception) {
-						// Failed profile causes all subsequent elements
-						// to be ignored!
-						errorHandler.fatalError(new ProfileLoadException(
-								profileURI, "profile", rdfaAttributes
-										.getProfileLocation(), exception));
-						context.setProfileFailed(true);
-						break;
-					}
-				}
-			}
-
-			// Failed profile causes all subsequent elements
-			// to be ignored!
-			if (context.isProfileFailed() == false) {
-				// Set vocabulary
-				if (rdfaAttributes.getVocab() != null) {
-					context.setVocabulary(rdfaAttributes.getVocab().isEmpty() == true ? null
-							: rdfaAttributes.getVocab());
-				}
-
-				// Register namespace mappings defined at @xmlns:*
-				for (PrefixMapping pm : rdfaAttributes.getXmlns()) {
-					context.registerPrefix(pm.getPrefix(), pm.getURI());
-				}
-
-				// Register namespace mappings defined at @prefix
-				for (PrefixMapping pm : rdfaAttributes.getPrefix()) {
-					context.registerPrefix(pm.getPrefix(), pm.getURI());
-				}
-
-				if (rdfaAttributes.getDatatype() != null) {
-					try {
-						Component datatypeURI = context
-								.expandTERMorCURIEorAbsURI(rdfaAttributes
-										.getDatatype());
-						datatypeURI.setLocation(rdfaAttributes
-								.getDatatypeLocation());
-						context.setDatatype(datatypeURI);
+						context.setBase(rdfaAttributes.getHref());
 					} catch (Exception exception) {
 						errorHandler
-								.warning(new NotTERMorCURIEorAbsURIException(
-										"datatype", rdfaAttributes
-												.getDatatypeLocation(),
+								.warning(new NotURIException("href",
+										rdfaAttributes.getHrefLocation(),
 										exception));
 					}
 				}
+				break;
+			}
+		}
 
-				if (rdfaAttributes.getRev() == null
-						&& rdfaAttributes.getRel() == null) {
-					// 6.
-					// If the current element contains no @rel or @rev
-					// attribute,
-					// then
-					// the next step is to establish a value for new subject.
-					// Any of
-					// the attributes that can carry a resource can set new
-					// subject
-					if (rdfaAttributes.getAbout() != null) {
-						// by using the URI from @about, if present
-						try {
-							Component aboutURI = context
-									.expandCURIEorURI(rdfaAttributes.getAbout());
-							aboutURI.setLocation(rdfaAttributes
-									.getAboutLocation());
-							context.setNewSubject(aboutURI);
-						} catch (Exception exception) {
-							errorHandler.warning(new NotCURIEorURIException(
-									"about", rdfaAttributes.getAboutLocation(),
+		if (rdfaAttributes.getProfile() != null) {
+			// Add local profiles
+			profilesToLoad
+					.addAll(Arrays.asList(rdfaAttributes.getProfile()));
+		}
+
+		if (profilesToLoad.isEmpty() == false && profileHandler != null) {
+			// Load profiles
+			for (String profileURI : profilesToLoad) {
+				try {
+					processProfile(profileHandler.loadProfile(profileURI));
+				} catch (Exception exception) {
+					// Failed profile causes all subsequent elements
+					// to be ignored!
+					errorHandler.fatalError(new ProfileLoadException(
+							profileURI, "profile", rdfaAttributes
+									.getProfileLocation(), exception));
+					context.setProfileFailed(true);
+					break;
+				}
+			}
+		}
+
+		// Failed profile causes all subsequent elements
+		// to be ignored!
+		if (context.isProfileFailed() == false) {
+			// Set vocabulary
+			if (rdfaAttributes.getVocab() != null) {
+				context.setVocabulary(rdfaAttributes.getVocab().isEmpty() == true ? null
+						: rdfaAttributes.getVocab());
+			}
+
+			// Register namespace mappings defined at @xmlns:*
+			for (PrefixMapping pm : rdfaAttributes.getXmlns()) {
+				context.registerPrefix(pm.getPrefix(), pm.getURI());
+			}
+
+			// Register namespace mappings defined at @prefix
+			for (PrefixMapping pm : rdfaAttributes.getPrefix()) {
+				context.registerPrefix(pm.getPrefix(), pm.getURI());
+			}
+
+			if (rdfaAttributes.getDatatype() != null) {
+				try {
+					Component datatypeURI = context
+							.expandTERMorCURIEorAbsURI(rdfaAttributes
+									.getDatatype());
+					datatypeURI.setLocation(rdfaAttributes
+							.getDatatypeLocation());
+					context.setDatatype(datatypeURI);
+				} catch (Exception exception) {
+					errorHandler
+							.warning(new NotTERMorCURIEorAbsURIException(
+									"datatype", rdfaAttributes
+											.getDatatypeLocation(),
 									exception));
-						}
-					} else if (rdfaAttributes.getSrc() != null) {
-						// otherwise, by using the URI from @src, if present
-						try {
-							Component srcURI = context.expandURI(rdfaAttributes
-									.getSrc());
-							srcURI.setLocation(rdfaAttributes.getSrcLocation());
-							context.setNewSubject(srcURI);
-						} catch (Exception exception) {
-							errorHandler
-									.warning(new NotURIException("src",
-											rdfaAttributes.getSrcLocation(),
-											exception));
-						}
-					} else if (rdfaAttributes.getResource() != null) {
-						// otherwise, by using the URI from @resource, if
-						// present
-						try {
-							Component resourceURI = context
-									.expandCURIEorURI(rdfaAttributes
-											.getResource());
-							resourceURI.setLocation(rdfaAttributes
-									.getResourceLocation());
-							context.setNewSubject(resourceURI);
-						} catch (Exception exception) {
-							errorHandler.warning(new NotCURIEorURIException(
-									"resource", rdfaAttributes
-											.getResourceLocation(), exception));
-						}
-					} else if (rdfaAttributes.getHref() != null) {
-						// otherwise, by using the URI from @href, if present
-						try {
-							Component hrefURI = context
-									.expandURI(rdfaAttributes.getHref());
-							hrefURI.setLocation(rdfaAttributes
-									.getHrefLocation());
-							context.setNewSubject(hrefURI);
-						} catch (Exception exception) {
-							errorHandler
-									.warning(new NotURIException("href",
-											rdfaAttributes.getHrefLocation(),
-											exception));
-						}
-					} else if (depth == 2) {
-						// if no URI is provided by a resource attribute, then
-						// first check to see if the element is a root
-						// element. If it is, then act as if there is an empty
-						// @about present, and process it according to the rule
-						// for @about.
-						try {
-							Component aboutURI = context.expandCURIEorURI("");
-							aboutURI.setLocation(location);
-							context.setNewSubject(aboutURI);
-						} catch (Exception exception) {
-							errorHandler.warning(new NotCURIEorURIException(
-									"about", location, exception));
-						}
-					}
+				}
+			}
 
-					if (context.getNewSubject() == null) {
-						// If no URI is provided by a resource attribute, then
-						// the
-						// first
-						// match from the following rules will apply
-						if (rdfaAttributes.getTypeof() != null) {
-							// if @typeof is present, then new subject is set to
-							// be
-							// a newly created bnode
-							context.setNewSubject(new Component(context
-									.generateBlankNode(), location));
-						} else {
-							// otherwise, if parent object is present, new
-							// subject
-							// is set to the value of parent object
-							if (context.getParentObject() != null) {
-								context.setNewSubject(context.getParentObject());
-								if (context.getProperty() == null) {
-									// Additionally, if @property is not present
-									// then the skip element flag is set to
-									// 'true';
-									context.setSkipElement(true);
-								}
-							}
-						}
+			if (rdfaAttributes.getRev() == null
+					&& rdfaAttributes.getRel() == null) {
+				// 6.
+				// If the current element contains no @rel or @rev
+				// attribute,
+				// then
+				// the next step is to establish a value for new subject.
+				// Any of
+				// the attributes that can carry a resource can set new
+				// subject
+				if (rdfaAttributes.getAbout() != null) {
+					// by using the URI from @about, if present
+					try {
+						Component aboutURI = context
+								.expandCURIEorURI(rdfaAttributes.getAbout());
+						aboutURI.setLocation(rdfaAttributes
+								.getAboutLocation());
+						context.setNewSubject(aboutURI);
+					} catch (Exception exception) {
+						errorHandler.warning(new NotCURIEorURIException(
+								"about", rdfaAttributes.getAboutLocation(),
+								exception));
 					}
-				} else {
-					// 7.
-					// If the current element does contain a @rel or @rev
-					// attribute,
-					// then the next step is to establish both a value for new
-					// subject
-					// and a value for current object resource:
-					if (rdfaAttributes.getAbout() != null) {
-						// by using the URI from @about, if present
-						try {
-							Component aboutURI = context
-									.expandCURIEorURI(rdfaAttributes.getAbout());
-							aboutURI.setLocation(rdfaAttributes
-									.getAboutLocation());
-							context.setNewSubject(aboutURI);
-						} catch (Exception exception) {
-							errorHandler.warning(new NotCURIEorURIException(
-									"about", rdfaAttributes.getAboutLocation(),
-									exception));
-						}
-					} else if (rdfaAttributes.getSrc() != null) {
-						// otherwise, by using the URI from @src, if present
-						try {
-							Component srcURI = context.expandURI(rdfaAttributes
-									.getSrc());
-							srcURI.setLocation(rdfaAttributes.getSrcLocation());
-							context.setNewSubject(srcURI);
-						} catch (Exception exception) {
-							errorHandler
-									.warning(new NotURIException("src",
-											rdfaAttributes.getSrcLocation(),
-											exception));
-						}
-					} else if (depth == 2) {
-						// if no URI is provided by a resource attribute, then
-						// first check to see if the element is a root
-						// element. If it is, then act as if there is an empty
-						// @about present, and process it according to the rule
-						// for @about.
-						try {
-							Component aboutURI = context.expandCURIEorURI("");
-							aboutURI.setLocation(location);
-							context.setNewSubject(aboutURI);
-						} catch (Exception exception) {
-							errorHandler.warning(new NotCURIEorURIException(
-									"about", location, exception));
-						}
+				} else if (rdfaAttributes.getSrc() != null) {
+					// otherwise, by using the URI from @src, if present
+					try {
+						Component srcURI = context.expandURI(rdfaAttributes
+								.getSrc());
+						srcURI.setLocation(rdfaAttributes.getSrcLocation());
+						context.setNewSubject(srcURI);
+					} catch (Exception exception) {
+						errorHandler
+								.warning(new NotURIException("src",
+										rdfaAttributes.getSrcLocation(),
+										exception));
 					}
-
-					if (context.getNewSubject() == null) {
-						// If no URI is provided then the first match from the
-						// following
-						// rules will apply:
-						if (rdfaAttributes.getTypeof() != null) {
-							// if @typeof is present, then new subject is set to
-							// be
-							// a
-							// newly created bnode;
-							context.setNewSubject(new Component(context
-									.generateBlankNode(), location));
-						} else if (context.getParentObject() != null) {
-							// otherwise, if parent object is present, new
-							// subject
-							// is
-							// set to that
-							context.setNewSubject(context.getParentObject());
-						}
+				} else if (rdfaAttributes.getResource() != null) {
+					// otherwise, by using the URI from @resource, if
+					// present
+					try {
+						Component resourceURI = context
+								.expandCURIEorURI(rdfaAttributes
+										.getResource());
+						resourceURI.setLocation(rdfaAttributes
+								.getResourceLocation());
+						context.setNewSubject(resourceURI);
+					} catch (Exception exception) {
+						errorHandler.warning(new NotCURIEorURIException(
+								"resource", rdfaAttributes
+										.getResourceLocation(), exception));
 					}
-					// Then the current object resource is set to the URI
-					// obtained
-					// from
-					// the first match from the following rules
-					if (rdfaAttributes.getResource() != null) {
-						// by using the URI from @resource, if present
-						try {
-							Component resourceURI = context
-									.expandCURIEorURI(rdfaAttributes
-											.getResource());
-							resourceURI.setLocation(rdfaAttributes
-									.getResourceLocation());
-							context.setCurrentObjectResource(resourceURI);
-						} catch (Exception exception) {
-							errorHandler.warning(new NotCURIEorURIException(
-									"resource", rdfaAttributes
-											.getResourceLocation(), exception));
-						}
-					} else if (rdfaAttributes.getHref() != null) {
-						// otherwise, by using the URI from @href, if present
-						try {
-							Component hrefURI = context
-									.expandURI(rdfaAttributes.getHref());
-							hrefURI.setLocation(rdfaAttributes
-									.getHrefLocation());
-							context.setCurrentObjectResource(hrefURI);
-						} catch (Exception exception) {
-							errorHandler
-									.warning(new NotURIException("href",
-											rdfaAttributes.getHrefLocation(),
-											exception));
-						}
+				} else if (rdfaAttributes.getHref() != null) {
+					// otherwise, by using the URI from @href, if present
+					try {
+						Component hrefURI = context
+								.expandURI(rdfaAttributes.getHref());
+						hrefURI.setLocation(rdfaAttributes
+								.getHrefLocation());
+						context.setNewSubject(hrefURI);
+					} catch (Exception exception) {
+						errorHandler
+								.warning(new NotURIException("href",
+										rdfaAttributes.getHrefLocation(),
+										exception));
+					}
+				} else if (depth == 2) {
+					// if no URI is provided by a resource attribute, then
+					// first check to see if the element is a root
+					// element. If it is, then act as if there is an empty
+					// @about present, and process it according to the rule
+					// for @about.
+					try {
+						Component aboutURI = context.expandCURIEorURI("");
+						aboutURI.setLocation(location);
+						context.setNewSubject(aboutURI);
+					} catch (Exception exception) {
+						errorHandler.warning(new NotCURIEorURIException(
+								"about", location, exception));
 					}
 				}
 
-				if (context.getNewSubject() != null
-						&& rdfaAttributes.getTypeof() != null) {
-					// 8.
-					// If in any of the previous steps a new subject
-					// was set to a non-null value, it is now used to
-					// provide a subject for type values
-					for (String type : rdfaAttributes.getTypeof()) {
-						// One or more 'types' for the new subject can
-						// be set by using @typeof. If present, the
-						// attribute must contain one or more URIs,
-						// obtained according to the section on URI
-						// and CURIE Processing, each of which is used
-						// to generate a triple
+				if (context.getNewSubject() == null) {
+					// If no URI is provided by a resource attribute, then
+					// the
+					// first
+					// match from the following rules will apply
+					if (rdfaAttributes.getTypeof() != null) {
+						// if @typeof is present, then new subject is set to
+						// be
+						// a newly created bnode
+						context.setNewSubject(new Component(context
+								.generateBlankNode(), location));
+					} else {
+						// otherwise, if parent object is present, new
+						// subject
+						// is set to the value of parent object
+						if (context.getParentObject() != null) {
+							context.setNewSubject(context.getParentObject());
+							if (context.getProperty() == null) {
+								// Additionally, if @property is not present
+								// then the skip element flag is set to
+								// 'true';
+								context.setSkipElement(true);
+							}
+						}
+					}
+				}
+			} else {
+				// 7.
+				// If the current element does contain a @rel or @rev
+				// attribute,
+				// then the next step is to establish both a value for new
+				// subject
+				// and a value for current object resource:
+				if (rdfaAttributes.getAbout() != null) {
+					// by using the URI from @about, if present
+					try {
+						Component aboutURI = context
+								.expandCURIEorURI(rdfaAttributes.getAbout());
+						aboutURI.setLocation(rdfaAttributes
+								.getAboutLocation());
+						context.setNewSubject(aboutURI);
+					} catch (Exception exception) {
+						errorHandler.warning(new NotCURIEorURIException(
+								"about", rdfaAttributes.getAboutLocation(),
+								exception));
+					}
+				} else if (rdfaAttributes.getSrc() != null) {
+					// otherwise, by using the URI from @src, if present
+					try {
+						Component srcURI = context.expandURI(rdfaAttributes
+								.getSrc());
+						srcURI.setLocation(rdfaAttributes.getSrcLocation());
+						context.setNewSubject(srcURI);
+					} catch (Exception exception) {
+						errorHandler
+								.warning(new NotURIException("src",
+										rdfaAttributes.getSrcLocation(),
+										exception));
+					}
+				} else if (depth == 2) {
+					// if no URI is provided by a resource attribute, then
+					// first check to see if the element is a root
+					// element. If it is, then act as if there is an empty
+					// @about present, and process it according to the rule
+					// for @about.
+					try {
+						Component aboutURI = context.expandCURIEorURI("");
+						aboutURI.setLocation(location);
+						context.setNewSubject(aboutURI);
+					} catch (Exception exception) {
+						errorHandler.warning(new NotCURIEorURIException(
+								"about", location, exception));
+					}
+				}
+
+				if (context.getNewSubject() == null) {
+					// If no URI is provided then the first match from the
+					// following
+					// rules will apply:
+					if (rdfaAttributes.getTypeof() != null) {
+						// if @typeof is present, then new subject is set to
+						// be
+						// a
+						// newly created bnode;
+						context.setNewSubject(new Component(context
+								.generateBlankNode(), location));
+					} else if (context.getParentObject() != null) {
+						// otherwise, if parent object is present, new
+						// subject
+						// is
+						// set to that
+						context.setNewSubject(context.getParentObject());
+					}
+				}
+				// Then the current object resource is set to the URI
+				// obtained
+				// from
+				// the first match from the following rules
+				if (rdfaAttributes.getResource() != null) {
+					// by using the URI from @resource, if present
+					try {
+						Component resourceURI = context
+								.expandCURIEorURI(rdfaAttributes
+										.getResource());
+						resourceURI.setLocation(rdfaAttributes
+								.getResourceLocation());
+						context.setCurrentObjectResource(resourceURI);
+					} catch (Exception exception) {
+						errorHandler.warning(new NotCURIEorURIException(
+								"resource", rdfaAttributes
+										.getResourceLocation(), exception));
+					}
+				} else if (rdfaAttributes.getHref() != null) {
+					// otherwise, by using the URI from @href, if present
+					try {
+						Component hrefURI = context
+								.expandURI(rdfaAttributes.getHref());
+						hrefURI.setLocation(rdfaAttributes
+								.getHrefLocation());
+						context.setCurrentObjectResource(hrefURI);
+					} catch (Exception exception) {
+						errorHandler
+								.warning(new NotURIException("href",
+										rdfaAttributes.getHrefLocation(),
+										exception));
+					}
+				}
+			}
+
+			if (context.getNewSubject() != null
+					&& rdfaAttributes.getTypeof() != null) {
+				// 8.
+				// If in any of the previous steps a new subject
+				// was set to a non-null value, it is now used to
+				// provide a subject for type values
+				for (String type : rdfaAttributes.getTypeof()) {
+					// One or more 'types' for the new subject can
+					// be set by using @typeof. If present, the
+					// attribute must contain one or more URIs,
+					// obtained according to the section on URI
+					// and CURIE Processing, each of which is used
+					// to generate a triple
+					try {
+						Component typeURI = context
+								.expandTERMorCURIEorAbsURI(type);
+						typeURI.setLocation(rdfaAttributes
+								.getTypeofLocation());
+						tripleSink.generateTriple(context.getNewSubject(),
+								new Component(RDF_NS + "type", location),
+								typeURI);
+					} catch (URISyntaxException exception) {
+						errorHandler
+								.warning(new NotTERMorCURIEorAbsURIException(
+										"typeof", rdfaAttributes
+												.getTypeofLocation(),
+										exception));
+					}
+				}
+			}
+
+			if (context.getCurrentObjectResource() != null) {
+				// 9.
+				// If in any of the previous steps a current object
+				// resource was set to a non-null value, it is now
+				// used to generate triples
+				String[] rel = rdfaAttributes.getRel();
+				if (rel != null && rel.length > 0
+						&& rel[0].isEmpty() == false) {
+					// if present, @rel may contain one or more
+					// URIs, obtained according to the section on
+					// CURIE and URI Processing each of which is
+					// used to generate a triple
+					for (String predicate : rel) {
 						try {
-							Component typeURI = context
-									.expandTERMorCURIEorAbsURI(type);
-							typeURI.setLocation(rdfaAttributes
-									.getTypeofLocation());
-							tripleSink.generateTriple(context.getNewSubject(),
-									new Component(RDF_NS + "type", location),
-									typeURI);
+							Component predicateURI = context
+									.expandTERMorCURIEorAbsURI(predicate);
+							predicateURI.setLocation(rdfaAttributes
+									.getRelLocation());
+							tripleSink.generateTriple(
+									context.getNewSubject(), predicateURI,
+									context.getCurrentObjectResource());
 						} catch (URISyntaxException exception) {
 							errorHandler
 									.warning(new NotTERMorCURIEorAbsURIException(
-											"typeof", rdfaAttributes
-													.getTypeofLocation(),
+											"rel", rdfaAttributes
+													.getRelLocation(),
 											exception));
 						}
 					}
 				}
-
-				if (context.getCurrentObjectResource() != null) {
-					// 9.
-					// If in any of the previous steps a current object
-					// resource was set to a non-null value, it is now
-					// used to generate triples
-					String[] rel = rdfaAttributes.getRel();
-					if (rel != null && rel.length > 0
-							&& rel[0].isEmpty() == false) {
-						// if present, @rel may contain one or more
-						// URIs, obtained according to the section on
-						// CURIE and URI Processing each of which is
-						// used to generate a triple
-						for (String predicate : rel) {
-							try {
-								Component predicateURI = context
-										.expandTERMorCURIEorAbsURI(predicate);
-								predicateURI.setLocation(rdfaAttributes
-										.getRelLocation());
-								tripleSink.generateTriple(
-										context.getNewSubject(), predicateURI,
-										context.getCurrentObjectResource());
-							} catch (URISyntaxException exception) {
-								errorHandler
-										.warning(new NotTERMorCURIEorAbsURIException(
-												"rel", rdfaAttributes
-														.getRelLocation(),
-												exception));
-							}
+				String[] rev = rdfaAttributes.getRev();
+				if (rev != null && rev.length > 0
+						&& rev[0].isEmpty() == false) {
+					// if present, @rev may contain one or more
+					// URIs, obtained according to the section on
+					// CURIE and URI Processing each of which is
+					// used to generate a triple
+					for (String predicate : rev) {
+						try {
+							Component predicateURI = context
+									.expandTERMorCURIEorAbsURI(predicate);
+							predicateURI.setLocation(rdfaAttributes
+									.getRevLocation());
+							tripleSink.generateTriple(
+									context.getCurrentObjectResource(),
+									predicateURI, context.getNewSubject());
+						} catch (URISyntaxException exception) {
+							errorHandler
+									.warning(new NotTERMorCURIEorAbsURIException(
+											"rev", rdfaAttributes
+													.getRevLocation(),
+											exception));
 						}
 					}
-					String[] rev = rdfaAttributes.getRev();
-					if (rev != null && rev.length > 0
-							&& rev[0].isEmpty() == false) {
-						// if present, @rev may contain one or more
-						// URIs, obtained according to the section on
-						// CURIE and URI Processing each of which is
-						// used to generate a triple
-						for (String predicate : rev) {
-							try {
-								Component predicateURI = context
-										.expandTERMorCURIEorAbsURI(predicate);
-								predicateURI.setLocation(rdfaAttributes
-										.getRevLocation());
-								tripleSink.generateTriple(
-										context.getCurrentObjectResource(),
-										predicateURI, context.getNewSubject());
-							} catch (URISyntaxException exception) {
-								errorHandler
-										.warning(new NotTERMorCURIEorAbsURIException(
-												"rev", rdfaAttributes
-														.getRevLocation(),
-												exception));
-							}
-						}
-					}
-				} else if (rdfaAttributes.getRel() != null
-						|| rdfaAttributes.getRev() != null) {
-					// 10.
-					// If however current object resource was set to null,
-					// but there are predicates present, then they must
-					// be stored as incomplete triples, pending the
-					// discovery of a subject that can be used as the
-					// object. Also, current object resource should be set
-					// to a newly created bnode
-					String[] rel = rdfaAttributes.getRel();
-					List<IncompleteTriple> incompleteTriples = new ArrayList<IncompleteTriple>();
-					if (rel != null && rel.length > 0
-							&& rel[0].isEmpty() == false) {
-						// If present, @rel must contain one or more URIs,
-						// obtained according to the section on CURIE and URI
-						// Processing each of which is added to the localContext
-						// list
-						// of incomplete triples
-						for (String predicate : rel) {
-							try {
-								Component predicateURI = context
-										.expandTERMorCURIEorAbsURI(predicate);
-								predicateURI.setLocation(rdfaAttributes
-										.getRelLocation());
-								incompleteTriples.add(new IncompleteTriple(
-										predicateURI, false));
-							} catch (URISyntaxException exception) {
-								errorHandler
-										.warning(new NotTERMorCURIEorAbsURIException(
-												"rel", rdfaAttributes
-														.getRelLocation(),
-												exception));
-							}
-						}
-					}
-					String[] rev = rdfaAttributes.getRev();
-					if (rev != null && rev.length > 0
-							&& rev[0].isEmpty() == false) {
-						// If present, @rel must contain one or more URIs,
-						// obtained according to the section on CURIE and URI
-						// Processing each of which is added to the localContext
-						// list
-						// of incomplete triples
-						for (String predicate : rev) {
-							try {
-								Component predicateURI = context
-										.expandTERMorCURIEorAbsURI(predicate);
-								predicateURI.setLocation(rdfaAttributes
-										.getRevLocation());
-								incompleteTriples.add(new IncompleteTriple(
-										predicateURI, true));
-							} catch (URISyntaxException exception) {
-								errorHandler
-										.warning(new NotTERMorCURIEorAbsURIException(
-												"rev", rdfaAttributes
-														.getRevLocation(),
-												exception));
-							}
-						}
-					}
-					if (incompleteTriples.isEmpty() == false) {
-						context.setLocalIncompleteTriples(incompleteTriples);
-					}
-					context.setCurrentObjectResource(new Component(context
-							.generateBlankNode(), location));
 				}
-
-				if (context.getProperty() != null) {
-					// determinate literal collecting mode
-					if (context.getContent() == null) {
-						// @content is not present
-						if (context.getDatatype() != null
-								&& context.getDatatype().getValue()
-										.equals(RDF_XMLLITERAL)) {
-							literalCollector.startCollectingXML();
-						} else {
-							literalCollector.startCollecting();
+			} else if (rdfaAttributes.getRel() != null
+					|| rdfaAttributes.getRev() != null) {
+				// 10.
+				// If however current object resource was set to null,
+				// but there are predicates present, then they must
+				// be stored as incomplete triples, pending the
+				// discovery of a subject that can be used as the
+				// object. Also, current object resource should be set
+				// to a newly created bnode
+				String[] rel = rdfaAttributes.getRel();
+				List<IncompleteTriple> incompleteTriples = new ArrayList<IncompleteTriple>();
+				if (rel != null && rel.length > 0
+						&& rel[0].isEmpty() == false) {
+					// If present, @rel must contain one or more URIs,
+					// obtained according to the section on CURIE and URI
+					// Processing each of which is added to the localContext
+					// list
+					// of incomplete triples
+					for (String predicate : rel) {
+						try {
+							Component predicateURI = context
+									.expandTERMorCURIEorAbsURI(predicate);
+							predicateURI.setLocation(rdfaAttributes
+									.getRelLocation());
+							incompleteTriples.add(new IncompleteTriple(
+									predicateURI, false));
+						} catch (URISyntaxException exception) {
+							errorHandler
+									.warning(new NotTERMorCURIEorAbsURIException(
+											"rel", rdfaAttributes
+													.getRelLocation(),
+											exception));
 						}
+					}
+				}
+				String[] rev = rdfaAttributes.getRev();
+				if (rev != null && rev.length > 0
+						&& rev[0].isEmpty() == false) {
+					// If present, @rel must contain one or more URIs,
+					// obtained according to the section on CURIE and URI
+					// Processing each of which is added to the localContext
+					// list
+					// of incomplete triples
+					for (String predicate : rev) {
+						try {
+							Component predicateURI = context
+									.expandTERMorCURIEorAbsURI(predicate);
+							predicateURI.setLocation(rdfaAttributes
+									.getRevLocation());
+							incompleteTriples.add(new IncompleteTriple(
+									predicateURI, true));
+						} catch (URISyntaxException exception) {
+							errorHandler
+									.warning(new NotTERMorCURIEorAbsURIException(
+											"rev", rdfaAttributes
+													.getRevLocation(),
+											exception));
+						}
+					}
+				}
+				if (incompleteTriples.isEmpty() == false) {
+					context.setLocalIncompleteTriples(incompleteTriples);
+				}
+				context.setCurrentObjectResource(new Component(context
+						.generateBlankNode(), location));
+			}
+
+			if (context.getProperty() != null) {
+				// determinate literal collecting mode
+				if (context.getContent() == null) {
+					// @content is not present
+					if (context.getDatatype() != null
+							&& context.getDatatype().getValue()
+									.equals(RDF_XMLLITERAL)) {
+						literalCollector.startCollectingXML();
+					} else {
+						literalCollector.startCollecting();
 					}
 				}
 			}
@@ -644,121 +643,121 @@ public class RDFaParser {
 	 * java.lang.String, java.lang.String)
 	 */
 	public void endRDFaElement(String uri, String localName, String qName) {
-		// XML Literal handling
-		if (literalCollector.collectCloseElement(uri, localName, qName) == false) {
-			// 11.
-			if (context.isProfileFailed() == false) {
-				if (context.getProperty() != null) {
-					Component datatype = null;
-					Lexical lexical = null;
-					Language language = context.getLanguage();
+		// 11.
+		if (context.isProfileFailed() == false) {
+			if (context.getProperty() != null) {
+				Component datatype = null;
+				Literal literal = null;
+				Language language = context.getLanguage();
 
-					if (context.getDatatype() != null
-							&& context.getDatatype().getValue().isEmpty() == false
-							&& context.getDatatype().getValue()
-									.equals(RDF_XMLLITERAL) == false) {
-						// as a typed literal if @datatype is present, does not
-						// have an empty value according to the section on
-						// CURIE and URI Processing, and is not set to
-						// XMLLiteral
-						// in the vocabulary
-						// http://www.w3.org/1999/02/22-rdf-syntax-ns#
-						if (context.getContent() != null) {
-							// The actual literal is either the value of
-							// @content (if present)
-							lexical = context.getContent();
-						} else {
-							// or a string created by concatenating the
-							// value of all descendant text nodes
-							lexical = literalCollector.stopCollecting();
-						}
-						datatype = context.getDatatype();
-					} else if (context.getDatatype() != null
-							&& context.getDatatype().getValue()
-									.equals(RDF_XMLLITERAL) == true) {
-						// as an XML literal if @datatype is present and is set
-						// to
-						// XMLLiteral in the vocabulary
-						// http://www.w3.org/1999/02/22-rdf-syntax-ns#
-						lexical = literalCollector.stopCollecting();
-						datatype = context.getDatatype();
+				if (context.getDatatype() != null
+						&& context.getDatatype().getValue().isEmpty() == false
+						&& context.getDatatype().getValue()
+								.equals(RDF_XMLLITERAL) == false) {
+					// as a typed literal if @datatype is present, does not
+					// have an empty value according to the section on
+					// CURIE and URI Processing, and is not set to
+					// XMLLiteral
+					// in the vocabulary
+					// http://www.w3.org/1999/02/22-rdf-syntax-ns#
+					if (context.getContent() != null) {
+						// The actual literal is either the value of
+						// @content (if present)
+						literal = context.getContent();
 					} else {
-						// otherwise as a plain literal
-						if (context.getContent() != null) {
-							// The actual literal is either the value of
-							// @content (if present)
-							lexical = context.getContent();
-						} else {
-							// or a string created by concatenating the
-							// value of all descendant text nodes
-							lexical = literalCollector.stopCollecting();
-						}
+						// or a string created by concatenating the
+						// value of all descendant text nodes
+						literal = literalCollector.stopCollecting();
 					}
-
-					if (lexical != null) {
-						// The current object literal is then used with
-						// each predicate to generate a triple
-						for (String predicate : context.getProperty()) {
-							try {
-								Component predicateURI = context
-										.expandTERMorCURIEorAbsURI(predicate);
-								predicateURI.setLocation(context
-										.getPropertyLocation());
-								tripleSink.generateTripleLiteral(
-										context.getNewSubject(), predicateURI,
-										lexical, language, datatype);
-							} catch (URISyntaxException exception) {
-								errorHandler
-										.warning(new NotTERMorCURIEorAbsURIException(
-												"property", context
-														.getPropertyLocation(),
-												exception));
-							}
-						}
+					datatype = context.getDatatype();
+				} else if (context.getDatatype() != null
+						&& context.getDatatype().getValue()
+								.equals(RDF_XMLLITERAL) == true) {
+					// as an XML literal if @datatype is present and is set
+					// to
+					// XMLLiteral in the vocabulary
+					// http://www.w3.org/1999/02/22-rdf-syntax-ns#
+					literal = literalCollector.stopCollecting();
+					datatype = context.getDatatype();
+				} else {
+					// otherwise as a plain literal
+					if (context.getContent() != null) {
+						// The actual literal is either the value of
+						// @content (if present)
+						literal = context.getContent();
+					} else {
+						// or a string created by concatenating the
+						// value of all descendant text nodes
+						literal = literalCollector.stopCollecting();
 					}
 				}
 
-				// 12.
-				if (context.isSkipElement() == false
-						&& context.getNewSubject() != null) {
-					// If the skip element flag is 'false', and new subject
-					// was set to a non-null value, then any incomplete
-					// triples within the current context should be completed
-					if (context.getEvaluationIncompleteTriples() != null) {
-						for (IncompleteTriple incompleteTriple : context
-								.getEvaluationIncompleteTriples()) {
-							if (incompleteTriple.isReverse() == false) {
-								// Forward
-								tripleSink.generateTriple(
-										context.getParentSubject(),
-										incompleteTriple.getURI(),
-										context.getNewSubject());
-							} else {
-								// Backward
-								tripleSink.generateTriple(
-										context.getNewSubject(),
-										incompleteTriple.getURI(),
-										context.getParentSubject());
-							}
+				if (literal != null) {
+					// The current object literal is then used with
+					// each predicate to generate a triple
+					for (String predicate : context.getProperty()) {
+						try {
+							Component predicateURI = context
+									.expandTERMorCURIEorAbsURI(predicate);
+							predicateURI.setLocation(context
+									.getPropertyLocation());
+							tripleSink.generateTripleLiteral(
+									context.getNewSubject(), predicateURI,
+									literal, language, datatype);
+						} catch (URISyntaxException exception) {
+							errorHandler
+									.warning(new NotTERMorCURIEorAbsURIException(
+											"property", context
+													.getPropertyLocation(),
+											exception));
 						}
-					}
-				}
-
-				if (format == XHTML_RDFA) {
-					// From XHTML
-					if (lookForBase == true && depth == 2
-							&& "head".equals(localName) == true
-							&& XHTML_NS.equals(uri) == true) {
-						// Start looking for base
-						lookForBase = false;
-						tripleSink.stopRelativeTripleCaching();
 					}
 				}
 			}
 
-			// Change context
-			context = context.getParentContext();
+			// 12.
+			if (context.isSkipElement() == false
+					&& context.getNewSubject() != null) {
+				// If the skip element flag is 'false', and new subject
+				// was set to a non-null value, then any incomplete
+				// triples within the current context should be completed
+				if (context.getEvaluationIncompleteTriples() != null) {
+					for (IncompleteTriple incompleteTriple : context
+							.getEvaluationIncompleteTriples()) {
+						if (incompleteTriple.isReverse() == false) {
+							// Forward
+							tripleSink.generateTriple(
+									context.getParentSubject(),
+									incompleteTriple.getURI(),
+									context.getNewSubject());
+						} else {
+							// Backward
+							tripleSink.generateTriple(
+									context.getNewSubject(),
+									incompleteTriple.getURI(),
+									context.getParentSubject());
+						}
+					}
+				}
+			}
+
+			if (format == XHTML_RDFA) {
+				// From XHTML
+				if (lookForBase == true && depth == 2
+						&& "head".equals(localName) == true
+						&& XHTML_NS.equals(uri) == true) {
+					// Start looking for base
+					lookForBase = false;
+					tripleSink.stopRelativeTripleCaching();
+				}
+			}
 		}
+
+		// Collect literal
+		literalCollector.collectCloseElement(uri, localName, qName);
+
+		// Change context
+		context = context.getParentContext();
 		depth--;
 	}
 
