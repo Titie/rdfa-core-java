@@ -17,7 +17,9 @@ package fi.tikesos.rdfa.core.parser;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.xerces.util.XMLChar;
 
@@ -27,7 +29,6 @@ import fi.tikesos.rdfa.core.datatype.Component;
 import fi.tikesos.rdfa.core.datatype.Language;
 import fi.tikesos.rdfa.core.datatype.Literal;
 import fi.tikesos.rdfa.core.datatype.Location;
-import fi.tikesos.rdfa.core.registry.Registry;
 
 /**
  * ProcessingContext contains both Local Context and Evaluation Context defined
@@ -52,8 +53,8 @@ public class ProcessingContext {
 	private boolean profileFailed = false;
 	// Shared between Local Context and Evaluation Context
 	private List<IncompleteTriple> incompleteTriples = null;
-	private Registry prefixMappings = null;
-	private Registry termMappings = null;
+	private Map<String, String> prefixMappings = null;
+	private Map<String, String> termMappings = null;
 	private Language language = null;
 	private String vocabulary = null;
 	private BaseURI base = null;
@@ -69,8 +70,8 @@ public class ProcessingContext {
 	public ProcessingContext(String baseURI) throws URISyntaxException {
 		this.base = new BaseURI(baseURI);
 		this.incompleteTriples = null;
-		this.prefixMappings = new Registry();
-		this.termMappings = new Registry();
+		this.prefixMappings = new HashMap<String, String>();
+		this.termMappings = new HashMap<String, String>();
 		this.blankNodeHandler = new BlankNodeHandler();
 		// Register default prefix
 		registerPrefix("", "http://www.w3.org/1999/xhtml/vocab#");
@@ -339,16 +340,16 @@ public class ProcessingContext {
 			// '_' is prohibited namespace prefix
 			if (parentContext != null
 					&& prefixMappings == parentContext.getPrefixMappings()) {
-				prefixMappings = new Registry(prefixMappings);
+				prefixMappings = new HashMap<String, String>(prefixMappings);
 			}
-			prefixMappings.set(prefix.toLowerCase(), uri);
+			prefixMappings.put(prefix.toLowerCase(), uri);
 		}
 	}
 
 	/**
 	 * @return
 	 */
-	public Registry getPrefixMappings() {
+	public Map<String, String> getPrefixMappings() {
 		return prefixMappings;
 	}
 	
@@ -368,7 +369,7 @@ public class ProcessingContext {
 		String uri = termMappings.get(term);
 		if (uri == null) {
 			// Falling to case-insensitive matching (slow!)
-			for (String registeredTerm : termMappings.getMappings().keySet()) {
+			for (String registeredTerm : termMappings.keySet()) {
 				if (term.equalsIgnoreCase(registeredTerm) == true) {
 					uri = termMappings.get(registeredTerm);
 					break;
@@ -385,15 +386,15 @@ public class ProcessingContext {
 	public void registerTerm(String term, String uri) {
 		if (parentContext != null
 				&& parentContext.getTermMappings() == termMappings) {
-			termMappings = new Registry(termMappings);
+			termMappings = new HashMap<String, String>(termMappings);
 		}
-		termMappings.set(term, uri);
+		termMappings.put(term, uri);
 	}
 
 	/**
 	 * @return
 	 */
-	public Registry getTermMappings() {
+	public Map<String, String> getTermMappings() {
 		return termMappings;
 	}
 
