@@ -15,6 +15,19 @@
  */
 package fi.tikesos.rdfa.core.profile;
 
+/**
+ * Profile handler interface
+ * 
+ * @author ssakorho
+ * 
+ */
 public interface ProfileHandler {
+	/**
+	 * @param profileURI
+	 *            The URI of profile to be loaded
+	 * @return Profile
+	 * @throws Exception
+	 *             Exception is thrown when profile fails to be loaded
+	 */
 	public Profile loadProfile(String profileURI) throws Exception;
 }

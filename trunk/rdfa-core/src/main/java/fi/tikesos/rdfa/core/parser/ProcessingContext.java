@@ -140,50 +140,49 @@ public class ProcessingContext {
 	}
 
 	/**
-	 * @return
+	 * @return The parent context
 	 */
 	public ProcessingContext getParentContext() {
 		return parentContext;
 	}
 
 	/**
-	 * @return
+	 * @return The blank node handler
 	 */
 	public BlankNodeHandler getBlankNodeHandler() {
 		return blankNodeHandler;
 	}
 
 	/**
-	 * @param profileFailed
-	 * @return
+	 * @param profileFailed The profile failed flag to set
 	 */
 	public void setProfileFailed(boolean profileFailed) {
 		this.profileFailed = profileFailed;
 	}
 
 	/**
-	 * @return
+	 * @return The profile failed flag
 	 */
 	public boolean isProfileFailed() {
 		return profileFailed;
 	}
 
 	/**
-	 * @return
+	 * @return The current base
 	 */
 	public BaseURI getBase() {
 		return base;
 	}
 
 	/**
-	 * @return
+	 * @return A blank node
 	 */
 	public String generateBlankNode() {
 		return blankNodeHandler.generateBlankNode();
 	}
 
 	/**
-	 * @return the skipElement
+	 * @return The skip element flag
 	 */
 	public boolean isSkipElement() {
 		return skipElement;
@@ -191,14 +190,14 @@ public class ProcessingContext {
 
 	/**
 	 * @param skipElement
-	 *            the skipElement to set
+	 *            The skip element flag to set
 	 */
 	public void setSkipElement(boolean skipElement) {
 		this.skipElement = skipElement;
 	}
 
 	/**
-	 * @return the newSubject
+	 * @return The New Subject
 	 */
 	public Component getNewSubject() {
 		return newSubject;
@@ -206,14 +205,14 @@ public class ProcessingContext {
 
 	/**
 	 * @param newSubject
-	 *            the newSubject to set
+	 *            The New Subject to set
 	 */
 	public void setNewSubject(Component newSubject) {
 		this.newSubject = newSubject;
 	}
 
 	/**
-	 * @return the currentObjectResource
+	 * @return The Current Object Resource
 	 */
 	public Component getCurrentObjectResource() {
 		return currentObjectResource;
@@ -221,14 +220,14 @@ public class ProcessingContext {
 
 	/**
 	 * @param currentObjectResource
-	 *            the currentObjectResource to set
+	 *            The Current Object Resource to set
 	 */
 	public void setCurrentObjectResource(Component currentObjectResource) {
 		this.currentObjectResource = currentObjectResource;
 	}
 
 	/**
-	 * @return the content
+	 * @return The content
 	 */
 	public Literal getContent() {
 		return content;
@@ -236,7 +235,7 @@ public class ProcessingContext {
 
 	/**
 	 * @param content
-	 *            the content to set
+	 *            The content to set
 	 */
 	public void setContent(Literal content) {
 		this.content = content;

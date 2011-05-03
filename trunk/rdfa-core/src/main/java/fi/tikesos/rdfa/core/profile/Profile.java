@@ -17,8 +17,25 @@ package fi.tikesos.rdfa.core.profile;
 
 import java.util.Map;
 
+/**
+ * Profile interface
+ * 
+ * @author ssakorho
+ * 
+ */
 public interface Profile {
+	/**
+	 * @return Term mappings defined in the profile
+	 */
 	public Map<String, String> getTermMappings();
+
+	/**
+	 * @return Prefix mappings defined in the profile
+	 */
 	public Map<String, String> getPrefixMappings();
+
+	/**
+	 * @return Default vocabulary set in the profile or null
+	 */
 	public String getDefaultVocabulary();
 }

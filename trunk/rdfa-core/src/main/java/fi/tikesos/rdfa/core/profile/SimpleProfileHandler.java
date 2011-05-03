@@ -34,7 +34,7 @@ import fi.tikesos.rdfa.core.triple.TripleSink;
 import fi.tikesos.rdfa.core.util.NullEntityResolver;
 
 /**
- * Non-caching (simple) profile loader.
+ * Simple caching profile handler
  * 
  * @author ssakorho
  * 
@@ -42,24 +42,32 @@ import fi.tikesos.rdfa.core.util.NullEntityResolver;
 public class SimpleProfileHandler implements ProfileHandler {
 	private Map<String, Profile> profileCache = new HashMap<String, Profile>();
 
+	/**
+	 * (non-Javadoc)
+	 * 
+	 * @see fi.tikesos.rdfa.core.profile.ProfileHandler#loadProfile(java.lang.String)
+	 */
 	public Profile loadProfile(String profileURI) throws Exception {
 		Profile profile = profileCache.get(profileURI);
 		if (profile == null) {
 			XMLReader reader = XMLReaderFactory.createXMLReader();
 			ProfileTripleSink profileTripleSink = new ProfileTripleSink();
-			SAXRDFaParser parser = new SAXRDFaParser(profileURI, profileTripleSink,
-					null, new NullErrorHandler(), RDFaParser.XML_RDFA);
-
+			SAXRDFaParser parser = new SAXRDFaParser(profileURI,
+					profileTripleSink, null, new NullErrorHandler(),
+					RDFaParser.XML_RDFA);
+			// Disable validation
 			reader.setFeature("http://xml.org/sax/features/validation",
 					Boolean.FALSE);
+			// Set processor to return namespaces as attributes
 			reader.setFeature("http://xml.org/sax/features/namespace-prefixes",
 					Boolean.TRUE);
-
+			// Set content handler
 			reader.setContentHandler(parser);
+			// Set entity resolver
 			reader.setEntityResolver(new NullEntityResolver());
+			// Parse the file
 			reader.parse(new InputSource(new URI(profileURI).toURL()
 					.openStream()));
-
 			profile = new SimpleProfile(profileTripleSink.getTermMappings(),
 					profileTripleSink.getPrefixMappings(),
 					profileTripleSink.getDefaultVocabulary());
@@ -87,7 +95,7 @@ public class SimpleProfileHandler implements ProfileHandler {
 			this.defaultVocabulary = defaultVocabulary;
 		}
 
-		/*
+		/**
 		 * (non-Javadoc)
 		 * 
 		 * @see fi.tikesos.rdfa.core.profile.Profile#getTermMappings()
@@ -96,7 +104,7 @@ public class SimpleProfileHandler implements ProfileHandler {
 			return termMappings;
 		}
 
-		/*
+		/**
 		 * (non-Javadoc)
 		 * 
 		 * @see fi.tikesos.rdfa.core.profile.Profile#getPrefixMappings()
@@ -105,7 +113,7 @@ public class SimpleProfileHandler implements ProfileHandler {
 			return prefixMappings;
 		}
 
-		/*
+		/**
 		 * (non-Javadoc)
 		 * 
 		 * @see fi.tikesos.rdfa.core.profile.Profile#getDefaultVocabulary()
@@ -118,10 +126,6 @@ public class SimpleProfileHandler implements ProfileHandler {
 	/**
 	 * TripleSink implementation for SimpleProfileLoader
 	 * 
-	 * @author ssakorho
-	 * 
-	 */
-	/**
 	 * @author ssakorho
 	 * 
 	 */
@@ -173,48 +177,44 @@ public class SimpleProfileHandler implements ProfileHandler {
 			return prefixMappings;
 		}
 
-		/*
+		/**
 		 * (non-Javadoc)
 		 * 
-		 * @see
-		 * fi.tikesos.rdfa.core.triple.TripleSink#startRelativeTripleCaching()
+		 * @see fi.tikesos.rdfa.core.triple.TripleSink#startRelativeTripleCaching()
 		 */
 		public void startRelativeTripleCaching() {
 		}
 
-		/*
+		/**
 		 * (non-Javadoc)
 		 * 
-		 * @see
-		 * fi.tikesos.rdfa.core.triple.TripleSink#stopRelativeTripleCaching()
+		 * @see fi.tikesos.rdfa.core.triple.TripleSink#stopRelativeTripleCaching()
 		 */
 		public void stopRelativeTripleCaching() {
 		}
 
-		/*
+		/**
 		 * (non-Javadoc)
 		 * 
-		 * @see
-		 * fi.tikesos.rdfa.core.triple.TripleSink#generateTriple(fi.tikesos.
-		 * rdfa.core.datatype.Component,
-		 * fi.tikesos.rdfa.core.datatype.Component,
-		 * fi.tikesos.rdfa.core.datatype.Component)
+		 * @see fi.tikesos.rdfa.core.triple.TripleSink#generateTriple(fi.tikesos.
+		 *      rdfa.core.datatype.Component,
+		 *      fi.tikesos.rdfa.core.datatype.Component,
+		 *      fi.tikesos.rdfa.core.datatype.Component)
 		 */
 		public void generateTriple(Component subject, Component predicate,
 				Component object) {
 			// Ignored
 		}
 
-		/*
+		/**
 		 * (non-Javadoc)
 		 * 
-		 * @see
-		 * fi.tikesos.rdfa.core.triple.TripleSink#generateTripleLiteral(fi.tikesos
-		 * .rdfa.core.datatype.Component,
-		 * fi.tikesos.rdfa.core.datatype.Component,
-		 * fi.tikesos.rdfa.core.datatype.Lexical,
-		 * fi.tikesos.rdfa.core.datatype.Language,
-		 * fi.tikesos.rdfa.core.datatype.Component)
+		 * @see fi.tikesos.rdfa.core.triple.TripleSink#generateTripleLiteral(fi.tikesos
+		 *      .rdfa.core.datatype.Component,
+		 *      fi.tikesos.rdfa.core.datatype.Component,
+		 *      fi.tikesos.rdfa.core.datatype.Lexical,
+		 *      fi.tikesos.rdfa.core.datatype.Language,
+		 *      fi.tikesos.rdfa.core.datatype.Component)
 		 */
 		public void generateTripleLiteral(Component subject,
 				Component predicate, Literal literal, Language language,
@@ -241,8 +241,11 @@ public class SimpleProfileHandler implements ProfileHandler {
 			}
 		}
 
-		/* (non-Javadoc)
-		 * @see fi.tikesos.rdfa.core.triple.TripleSink#generateTriple(java.lang.String, java.lang.String, java.lang.String)
+		/**
+		 * (non-Javadoc)
+		 * 
+		 * @see fi.tikesos.rdfa.core.triple.TripleSink#generateTriple(java.lang.String
+		 *      , java.lang.String, java.lang.String)
 		 */
 		public void generateTriple(String subject, String predicate,
 				String object) {
@@ -250,8 +253,12 @@ public class SimpleProfileHandler implements ProfileHandler {
 			throw new UnsupportedOperationException();
 		}
 
-		/* (non-Javadoc)
-		 * @see fi.tikesos.rdfa.core.triple.TripleSink#generateTripleLiteral(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
+		/**
+		 * (non-Javadoc)
+		 * 
+		 * @see fi.tikesos.rdfa.core.triple.TripleSink#generateTripleLiteral(java
+		 *      .lang.String, java.lang.String, java.lang.String,
+		 *      java.lang.String, java.lang.String)
 		 */
 		public void generateTripleLiteral(String subject, String predicate,
 				String lexical, String language, String datatype) {
