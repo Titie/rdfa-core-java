@@ -74,7 +74,7 @@ public class ProcessingContext {
 		this.termMappings = new HashMap<String, String>();
 		this.blankNodeHandler = new BlankNodeHandler();
 		// Register default prefix
-		registerPrefix("", "http://www.w3.org/1999/xhtml/vocab#");
+		this.prefixMappings.put("", "http://www.w3.org/1999/xhtml/vocab#");
 	}
 
 	/**
@@ -336,7 +336,7 @@ public class ProcessingContext {
 	 * @param uri
 	 */
 	public void registerPrefix(String prefix, String uri) {
-		if (prefix.compareTo("_") != 0) {
+		if (prefix.length() > 0 && prefix.compareTo("_") != 0) {
 			// '_' is prohibited namespace prefix
 			if (parentContext != null
 					&& prefixMappings == parentContext.getPrefixMappings()) {
