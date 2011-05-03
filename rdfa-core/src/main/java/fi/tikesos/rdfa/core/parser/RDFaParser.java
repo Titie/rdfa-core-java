@@ -46,7 +46,6 @@ import fi.tikesos.rdfa.core.literal.LiteralCollector;
  * 
  * @author Sami Korhonen, University Of Eastern Finland
  * @email sami.s.korhonen@uef.fi
- * @version 0.6
  */
 public class RDFaParser {
 	public static final int UNKNOWN_XML = 0;
@@ -90,24 +89,6 @@ public class RDFaParser {
 		this.format = format;
 		this.depth = 0;
 		this.lookForBase = (format == XHTML_RDFA ? true : false);
-	}
-
-	public void processProfile(Profile profile) {
-		// Prefix mappings
-		for (Entry<String, String> p : profile.getPrefixMappings().entrySet()) {
-			context.registerPrefix(p.getKey(), p.getValue());
-		}
-		// Term mappings
-		for (Entry<String, String> p : profile.getTermMappings().entrySet()) {
-			// May not overwrite existing term mapping
-			if (context.isTermRegistered(p.getKey()) == false) {
-				context.registerTerm(p.getKey(), p.getValue());
-			}
-		}
-		// Default vocabulary
-		if (profile.getDefaultVocabulary() != null) {
-			context.setVocabulary(profile.getDefaultVocabulary());
-		}
 	}
 
 	/**
@@ -205,7 +186,24 @@ public class RDFaParser {
 			// Load profiles
 			for (String profileURI : profilesToLoad) {
 				try {
-					processProfile(profileHandler.loadProfile(profileURI));
+					Profile profile = profileHandler.loadProfile(profileURI);
+					// Prefix mappings
+					for (Entry<String, String> p : profile.getPrefixMappings()
+							.entrySet()) {
+						context.registerPrefix(p.getKey(), p.getValue());
+					}
+					// Term mappings
+					for (Entry<String, String> p : profile.getTermMappings()
+							.entrySet()) {
+						// May not overwrite existing term mapping
+						if (context.isTermRegistered(p.getKey()) == false) {
+							context.registerTerm(p.getKey(), p.getValue());
+						}
+					}
+					// Default vocabulary
+					if (profile.getDefaultVocabulary() != null) {
+						context.setVocabulary(profile.getDefaultVocabulary());
+					}
 				} catch (Exception exception) {
 					// Failed profile causes all subsequent elements
 					// to be ignored!
@@ -237,6 +235,7 @@ public class RDFaParser {
 				context.registerPrefix(pm.getPrefix(), pm.getURI());
 			}
 
+			// Get datatype
 			if (rdfaAttributes.getDatatype() != null) {
 				try {
 					Component datatypeURI = context
@@ -414,9 +413,7 @@ public class RDFaParser {
 					}
 				}
 				// Then the current object resource is set to the URI
-				// obtained
-				// from
-				// the first match from the following rules
+				// obtained from the first match from the following rules
 				if (rdfaAttributes.getResource() != null) {
 					// by using the URI from @resource, if present
 					try {
@@ -628,8 +625,7 @@ public class RDFaParser {
 					// as a typed literal if @datatype is present, does not
 					// have an empty value according to the section on
 					// CURIE and URI Processing, and is not set to
-					// XMLLiteral
-					// in the vocabulary
+					// XMLLiteral in the vocabulary
 					// http://www.w3.org/1999/02/22-rdf-syntax-ns#
 					if (context.getContent() != null) {
 						// The actual literal is either the value of
@@ -645,8 +641,7 @@ public class RDFaParser {
 						&& context.getDatatype().getValue()
 								.equals(RDF_XMLLITERAL) == true) {
 					// as an XML literal if @datatype is present and is set
-					// to
-					// XMLLiteral in the vocabulary
+					// to XMLLiteral in the vocabulary
 					// http://www.w3.org/1999/02/22-rdf-syntax-ns#
 					literal = literalCollector.stopCollecting();
 					datatype = context.getDatatype();
@@ -711,8 +706,8 @@ public class RDFaParser {
 				}
 			}
 
+			// XHTML+RDFa host language
 			if (format == XHTML_RDFA) {
-				// From XHTML
 				if (lookForBase == true && depth == 2
 						&& "head".equals(localName) == true
 						&& XHTML_NS.equals(uri) == true) {
