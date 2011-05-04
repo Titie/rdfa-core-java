@@ -19,32 +19,32 @@ package fi.tikesos.rdfa.core.datatype;
  * Language container class.
  * 
  * @author ssakorho
- *
+ * 
  */
 public class Language {
 	private String value;
 	private Location location;
-	
+
 	/**
-	 * Constructor
+	 * Class constructor.
 	 * 
-	 * @param value
-	 * @param location
+	 * @param value The language.
+	 * @param location The language's location in the document.
 	 */
 	public Language(String value, Location location) {
 		this.value = value;
 		this.location = location;
 	}
-	
+
 	/**
-	 * @return
+	 * @return The language.
 	 */
 	public String getValue() {
 		return value;
 	}
-	
+
 	/**
-	 * @return
+	 * @return The language's location in the document.
 	 */
 	public Location getLocation() {
 		return location;

@@ -34,9 +34,9 @@ public class Component {
 	 * Class constructor.
 	 * 
 	 * @param absoulteURI
-	 *            the absolute uri
+	 *            The absolute uri.
 	 * @param location
-	 *            the location value was located on
+	 *            The location value was located on.
 	 */
 	public Component(String absoluteURI, Location location) {
 		this.absoluteURI = absoluteURI;
@@ -47,7 +47,7 @@ public class Component {
 	 * Class constructor.
 	 * 
 	 * @param absoulteURI
-	 *            the absolute uri
+	 *            The absolute uri.
 	 */
 	public Component(String absoluteURI) {
 		this.absoluteURI = absoluteURI;
@@ -57,7 +57,7 @@ public class Component {
 	 * Class constructor.
 	 * 
 	 * @param baseURI
-	 *            the base uri
+	 *            The base uri.
 	 */
 	public Component(BaseURI baseURI) {
 		this.baseURI = baseURI;
@@ -67,9 +67,9 @@ public class Component {
 	 * Class constructor.
 	 * 
 	 * @param baseURI
-	 *            the base uri
+	 *            The base uri.
 	 * @param uri
-	 *            the uri
+	 *            The uri.
 	 */
 	public Component(BaseURI baseURI, URI uri) {
 		if (uri.isAbsolute() == true) {
@@ -81,7 +81,7 @@ public class Component {
 	}
 
 	/**
-	 * @return the location value was located on
+	 * @return The component's location in the document.
 	 */
 	public Location getLocation() {
 		return location;
@@ -89,14 +89,14 @@ public class Component {
 
 	/**
 	 * @param location
-	 *            the location value was located on
+	 *            The component's location in the document.
 	 */
 	public void setLocation(Location location) {
 		this.location = location;
 	}
 
 	/**
-	 * @return the uri
+	 * @return The URI value.
 	 */
 	public String getValue() {
 		if (baseURI != null && baseURI.getURI() != currentBaseURI) {
@@ -108,16 +108,16 @@ public class Component {
 	}
 	
 	/**
-	 * @return true if uri is absolute, otherwise false
+	 * @return True if uri is absolute, otherwise false.
 	 */
 	public boolean isAbsolute() {
 		return baseURI != null;
 	}
 
 	/**
-	 * @return string representation of Component
+	 * @return The string representation of Component.
 	 */
 	public String toString() {
-		return getValue() + " [" + location.toString() + "]";
+		return getValue() + (location != null ? " [" + location.toString() + "]" : "");
 	}
 }

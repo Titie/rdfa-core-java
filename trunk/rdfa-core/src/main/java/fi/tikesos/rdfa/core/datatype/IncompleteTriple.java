@@ -16,25 +16,37 @@
 package fi.tikesos.rdfa.core.datatype;
 
 /**
+ * Wrapper class for incomplete triples.
+ * 
  * @author ssakorho
- *
+ * 
  */
 public class IncompleteTriple {
-	private Component uri;
+	private Component component;
 	private boolean reverse;
-	
-	public IncompleteTriple(Component uri, boolean reverse) {
-		this.uri = uri;
+
+	/**
+	 * Class constructor.
+	 * 
+	 * @param component
+	 *            The component.
+	 * @param reverse
+	 *            The reverse flag.
+	 */
+	public IncompleteTriple(Component component, boolean reverse) {
+		this.component = component;
 		this.reverse = reverse;
 	}
+
 	/**
-	 * @return
+	 * @return The component.
 	 */
-	public Component getURI() {
-		return uri;
+	public Component getComponent() {
+		return component;
 	}
+
 	/**
-	 * @return the reverse
+	 * @return The reverse flag.
 	 */
 	public boolean isReverse() {
 		return reverse;

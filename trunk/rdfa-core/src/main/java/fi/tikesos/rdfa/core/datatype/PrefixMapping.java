@@ -17,31 +17,34 @@ package fi.tikesos.rdfa.core.datatype;
 
 /**
  * @author ssakorho
- *
+ * 
  */
 public class PrefixMapping {
 	private String prefix;
-	private String uri;
-	
+	private String reference;
+
 	/**
 	 * @param prefix
-	 * @param uri
+	 *            The prefix.
+	 * @param reference
+	 *            The reference.
 	 */
-	public PrefixMapping(String prefix, String uri) {
+	public PrefixMapping(String prefix, String reference) {
 		this.prefix = prefix;
-		this.uri = uri;
+		this.reference = reference;
 	}
 
 	/**
-	 * @return the prefix
+	 * @return The prefix.
 	 */
 	public String getPrefix() {
 		return prefix;
 	}
+
 	/**
-	 * @return the uri
+	 * @return The reference.
 	 */
-	public String getURI() {
-		return uri;
+	public String getReference() {
+		return reference;
 	}
 }

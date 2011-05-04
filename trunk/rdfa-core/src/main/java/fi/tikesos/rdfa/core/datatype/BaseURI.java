@@ -19,7 +19,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 /**
- * Containter class for storing Base URI
+ * Wrapper class for storing base URI
  * 
  * @author ssakorho
  *
@@ -30,28 +30,28 @@ public class BaseURI {
 	/**
 	 * Class constructor
 	 * 
-	 * @param uri
-	 * @throws URISyntaxException 
+	 * @param str The string to be parsed into a base URI.
+	 * @throws URISyntaxException
 	 */
-	public BaseURI(String uri) throws URISyntaxException {
-		value = new URI(uri);
+	public BaseURI(String str) throws URISyntaxException {
+		value = new URI(str);
 	}
 	
 	/**
-	 * @param uri
+	 * @param str The string to be parsed into a base URI.
 	 * @throws URISyntaxException 
 	 */
-	public void setURI(String uri) throws URISyntaxException {
-		int hash = uri.lastIndexOf('#');
+	public void setURI(String str) throws URISyntaxException {
+		int hash = str.lastIndexOf('#');
 		if (hash != -1) {
 			// Fragment is removed from base
-			uri = uri.substring(0, hash);
+			str = str.substring(0, hash);
 		}
-		value = new URI(uri);
+		value = value.resolve(str);
 	}
 	
 	/**
-	 * @return
+	 * @return The base URI.
 	 */
 	public URI getURI() {
 		return value;
