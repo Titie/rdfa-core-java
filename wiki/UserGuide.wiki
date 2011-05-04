@@ -1,0 +1,11 @@
+#summary rdfa-core-java User's guide.
+
+= User's guide =
+
+Welcome to rdfa-core-java user's guide. This guide is a work in progress. our contributions to this documentation effort are welcome.
+
+= Index =
+
+  # Parsing RDFa document with SAX
+  # Parsing RDFa document with DOM
+  # Jena integration
