@@ -205,7 +205,7 @@ public class LiteralCollector {
 								literal.append(pm.getPrefix());
 							}
 							literal.append("=\"");
-							StringEscapeUtils.escapeXML(pm.getURI(),
+							StringEscapeUtils.escapeXML(pm.getReference(),
 									literal.getBuffer());
 							literal.append("\"");
 							registeredPrefix.add(pm.getPrefix());

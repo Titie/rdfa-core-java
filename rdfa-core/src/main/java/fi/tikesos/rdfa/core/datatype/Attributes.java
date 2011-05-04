@@ -19,13 +19,50 @@ package fi.tikesos.rdfa.core.datatype;
  * Common interface for attributes.
  * 
  * @author ssakorho
- *
+ * 
  */
 public interface Attributes {
+	/**
+	 * @return The number of attributes in the list.
+	 */
 	public int getCount();
+
+	/**
+	 * @param index
+	 *            The attribute index (zero-based).
+	 * @return The XML qualified name, or the empty string if none is available,
+	 *         or null if the index is out of range.
+	 */
 	public String getQName(int index);
+
+	/**
+	 * @param index
+	 *            The attribute index (zero-based).
+	 * @return The local name, or the empty string if Namespace processing is
+	 *         not being performed, or null if the index is out of range.
+	 */
 	public String getLocalName(int index);
+
+	/**
+	 * @param index
+	 *            The attribute index (zero-based).
+	 * @return The Namespace URI, or the empty string if none is available, or
+	 *         null if the index is out of range.
+	 */
 	public String getURI(int index);
+
+	/**
+	 * @param index
+	 *            The attribute index (zero-based).
+	 * @return The attribute's value as a string, or null if the index is out of
+	 *         range.
+	 */
 	public String getValue(int index);
+
+	/**
+	 * @param index
+	 *            The attribute index (zero-based).
+	 * @return The attribute's location in the document.
+	 */
 	public Location getLocation(int index);
 }

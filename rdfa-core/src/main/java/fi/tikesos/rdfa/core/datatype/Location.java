@@ -16,10 +16,10 @@
 package fi.tikesos.rdfa.core.datatype;
 
 /**
- * Location interface
+ * Location interface.
  * 
  * @author ssakorho
- *
+ * 
  */
 public interface Location {
 }

@@ -19,62 +19,79 @@ package fi.tikesos.rdfa.core.datatype;
  * Literal container class.
  * 
  * @author ssakorho
- *
+ * 
  */
 public class Literal {
 	private StringBuffer buffer;
 	private String value;
 	private Location location;
-	
+
 	/**
-	 * Constructor
+	 * Class constructor.
 	 */
 	public Literal() {
 		this.buffer = new StringBuffer();
 		this.location = null;
 		this.value = null;
 	}
-	
+
 	/**
-	 * Constructor
+	 * Class constructor.
 	 * 
 	 * @param value
+	 *            The string value of the literal.
 	 * @param location
+	 *            The literal's location in the document.
 	 */
 	public Literal(String value, Location location) {
 		this.buffer = null;
 		this.location = location;
 		this.value = value;
 	}
-	
+
 	/**
-	 * @return
+	 * @return The string value of the literal.
 	 */
 	public String getValue() {
 		return value != null ? value : buffer.toString();
 	}
-	
+
+	/**
+	 * @return The literal's location in the document.
+	 */
+	public Location getLocation() {
+		return location;
+	}
+
+	/**
+	 * @param location
+	 *            The literal's location in the document.
+	 */
+	public void setLocation(Location location) {
+		this.location = location;
+	}
+
 	/**
 	 * @return
 	 */
 	public StringBuffer getBuffer() {
 		return buffer;
 	}
-	
+
 	/**
 	 * @param buffer
 	 */
 	public void append(Literal literal) {
 		buffer.append(literal.getBuffer());
 	}
-	
+
 	/**
 	 * @param str
 	 */
 	public void append(String str) {
 		buffer.append(str);
 	}
-	
+
 	/**
 	 * @param ch
 	 * @param length
@@ -83,28 +100,14 @@ public class Literal {
 	public void append(char[] ch, int start, int length) {
 		buffer.append(ch, start, length);
 	}
-	
-	/**
-	 * @return
-	 */
-	public Location getLocation() {
-		return location;
-	}
 
-	/**
-	 * @param location
-	 */
-	public void setLocation(Location location) {
-		this.location = location;
-	}
-	
 	/**
 	 * @return
 	 */
 	public int length() {
 		return buffer.length();
 	}
-	
+
 	/**
 	 * @param newLength
 	 */

@@ -227,12 +227,12 @@ public class RDFaParser {
 
 			// Register namespace mappings defined at @xmlns:*
 			for (PrefixMapping pm : rdfaAttributes.getXmlns()) {
-				context.registerPrefix(pm.getPrefix(), pm.getURI());
+				context.registerPrefix(pm.getPrefix(), pm.getReference());
 			}
 
 			// Register namespace mappings defined at @prefix
 			for (PrefixMapping pm : rdfaAttributes.getPrefix()) {
-				context.registerPrefix(pm.getPrefix(), pm.getURI());
+				context.registerPrefix(pm.getPrefix(), pm.getReference());
 			}
 
 			// Get datatype
@@ -694,12 +694,12 @@ public class RDFaParser {
 							// Forward
 							tripleSink.generateTriple(
 									context.getParentSubject(),
-									incompleteTriple.getURI(),
+									incompleteTriple.getComponent(),
 									context.getNewSubject());
 						} else {
 							// Backward
 							tripleSink.generateTriple(context.getNewSubject(),
-									incompleteTriple.getURI(),
+									incompleteTriple.getComponent(),
 									context.getParentSubject());
 						}
 					}
