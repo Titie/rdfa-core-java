@@ -67,21 +67,22 @@ public class DOMRDFaParser {
 				// Create DOMAttributes
 				Attributes attributes = new DOMAttributes(node.getAttributes());
 				// Start element
+				DOMLocation location = new DOMLocation(node);
 				parser.beginRDFaElement(node.getNamespaceURI(),
 						node.getLocalName(), node.getNodeName(), attributes,
-						new DOMLocation(node));
+						location);
 				// Recurse to child
 				if (node.hasChildNodes() == true) {
 					process(parser, node.getFirstChild());
 				}
 				// End element
 				parser.endRDFaElement(node.getNamespaceURI(),
-						node.getLocalName(), node.getNodeName());
+						node.getLocalName(), node.getNodeName(), location);
 				break;
 			case Node.CDATA_SECTION_NODE:
 			case Node.TEXT_NODE:
 				// Text or CDATA
-				parser.writeLiteral(node.getNodeValue(), new DOMLocation(node));
+				parser.writeCharacters(node.getNodeValue(), new DOMLocation(node));
 				break;
 			}
 			// Iterate to next sibling

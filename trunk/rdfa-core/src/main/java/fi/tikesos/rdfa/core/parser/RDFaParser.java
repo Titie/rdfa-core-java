@@ -610,7 +610,7 @@ public class RDFaParser {
 	 * @see org.xml.sax.ContentHandler#endElement(java.lang.String,
 	 *      java.lang.String, java.lang.String)
 	 */
-	public void endRDFaElement(String uri, String localName, String qName) {
+	public void endRDFaElement(String uri, String localName, String qName, Location location) {
 		// 11.
 		if (context.isProfileFailed() == false) {
 			if (context.getProperty() != null) {
@@ -635,6 +635,7 @@ public class RDFaParser {
 						// or a string created by concatenating the
 						// value of all descendant text nodes
 						literal = literalCollector.stopCollecting();
+						literal.setLocation(location);
 					}
 					datatype = context.getDatatype();
 				} else if (context.getDatatype() != null
@@ -644,6 +645,7 @@ public class RDFaParser {
 					// to XMLLiteral in the vocabulary
 					// http://www.w3.org/1999/02/22-rdf-syntax-ns#
 					literal = literalCollector.stopCollecting();
+					literal.setLocation(location);
 					datatype = context.getDatatype();
 				} else {
 					// otherwise as a plain literal
@@ -655,6 +657,7 @@ public class RDFaParser {
 						// or a string created by concatenating the
 						// value of all descendant text nodes
 						literal = literalCollector.stopCollecting();
+						literal.setLocation(location);
 					}
 				}
 
@@ -719,7 +722,7 @@ public class RDFaParser {
 		}
 
 		// Collect literal
-		literalCollector.collectCloseElement(uri, localName, qName);
+		literalCollector.collectCloseElement(uri, localName, qName, location);
 
 		// Change context
 		context = context.getParentContext();
@@ -732,15 +735,15 @@ public class RDFaParser {
 	 * @param length
 	 * @param location
 	 */
-	public void writeLiteral(char[] ch, int start, int length, Location location) {
-		literalCollector.collect(ch, start, length, true, location);
+	public void writeCharacters(char[] ch, int start, int length, Location location) {
+		literalCollector.collectCharacters(ch, start, length, true, location);
 	}
 
 	/**
 	 * @param str
 	 * @param location
 	 */
-	public void writeLiteral(String str, Location location) {
-		literalCollector.collect(str, true, location);
+	public void writeCharacters(String str, Location location) {
+		literalCollector.collectCharacters(str, true, location);
 	}
 }

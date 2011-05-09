@@ -73,18 +73,22 @@ public class LiteralCollector {
 	 * @param shouldEncode
 	 * @param location
 	 */
-	public void collect(String toCollect, boolean shouldEncode,
+	public void collectCharacters(String toCollect, boolean shouldEncode,
 			Location location) {
 		if (xmlLiteral.isEmpty() == false) {
+			Literal lit = xmlLiteral.peek().getXMLLiteral();
 			if (shouldEncode == true) {
-				StringEscapeUtils
-						.escapeXML(toCollect, xmlLiteral.peek().getXMLLiteral().getBuffer());
+				// Encoded
+				StringEscapeUtils.escapeXML(toCollect, lit.getBuffer());
 			} else {
-				xmlLiteral.peek().getXMLLiteral().append(toCollect);
+				// Plain
+				lit.append(toCollect);
 			}
 		}
 		if (literal.isEmpty() == false) {
-			literal.peek().append(toCollect);
+			// Plain
+			Literal lit = literal.peek();
+			lit.append(toCollect);
 		}
 		implicitClose = false;
 	}
@@ -98,31 +102,26 @@ public class LiteralCollector {
 	 * @param shouldEncode
 	 * @param location
 	 */
-	public void collect(char[] toCollect, int start, int length,
+	public void collectCharacters(char[] toCollect, int start, int length,
 			boolean shouldEncode, Location location) {
 		if (xmlLiteral.isEmpty() == false) {
+			Literal lit = xmlLiteral.peek().getXMLLiteral();
 			if (shouldEncode == true) {
+				// Encoded
 				StringEscapeUtils.escapeXML(toCollect, start, length,
-						xmlLiteral.peek().getXMLLiteral().getBuffer());
+						lit.getBuffer());
 			} else {
-				xmlLiteral.peek().getXMLLiteral().append(toCollect, start, length);
+				// Plain
+				lit.append(toCollect, start, length);
 			}
 		}
 		if (literal.isEmpty() == false) {
-			literal.peek().append(toCollect, start, length);
+			// Plain
+			Literal lit = literal.peek();
+			lit.append(toCollect, start, length);
 		}
 		implicitClose = false;
 	}
-
-
-	/**
-	 * Check if literal collector is collecting literal
-	 * 
-	 * @return
-	 */
-/*	public boolean isCollecting() {
-		return literal.isEmpty() == false || xmlLiteral.isEmpty() == false;
-	} */
 
 	/**
 	 * Stop collecting literal
@@ -131,7 +130,8 @@ public class LiteralCollector {
 	 */
 	public Literal stopCollecting() {
 		Literal result;
-		if (xmlLiteral.isEmpty() == true || xmlLiteral.peek().getDepth() != depth) {
+		if (xmlLiteral.isEmpty() == true
+				|| xmlLiteral.peek().getDepth() != depth) {
 			result = literal.pop();
 			if (literal.isEmpty() == false) {
 				// Copy to parent Literal
@@ -156,13 +156,13 @@ public class LiteralCollector {
 	 * @param rdfaAttributes
 	 * @param location
 	 */
-	public void collectStartElement(String uri, String localName,
-			String qName, RDFaAttributes rdfaAttributes, Location location) {
+	public void collectStartElement(String uri, String localName, String qName,
+			RDFaAttributes rdfaAttributes, Location location) {
 		if (xmlLiteral.isEmpty() == false) {
 			// <ELEMENT
 			XMLLiteralWrapper wrapper = xmlLiteral.peek();
 			Literal literal = wrapper.getXMLLiteral();
-			
+
 			literal.append("<");
 			literal.append(qName);
 
@@ -247,9 +247,10 @@ public class LiteralCollector {
 	 * @param uri
 	 * @param localName
 	 * @param qName
+	 * @param location
 	 */
-	public void collectCloseElement(String uri, String localName,
-			String qName) {
+	public void collectCloseElement(String uri, String localName, String qName,
+			Location location) {
 		if (xmlLiteral.isEmpty() == false) {
 			XMLLiteralWrapper wrapper = xmlLiteral.peek();
 			Literal literal = wrapper.getXMLLiteral();
