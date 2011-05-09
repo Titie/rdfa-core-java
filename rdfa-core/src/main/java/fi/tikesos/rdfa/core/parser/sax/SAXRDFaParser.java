@@ -106,8 +106,8 @@ public class SAXRDFaParser extends RDFaParser implements ContentHandler {
 	public void startElement(String uri, String localName, String qName,
 			Attributes atts) throws SAXException {
 		SAXLocation location = new SAXLocation(line, column);
-		beginRDFaElement(uri, localName, qName, new SAXAttributes(atts, location),
-				location);
+		beginRDFaElement(uri, localName, qName, new SAXAttributes(atts,
+				location), location);
 		saveLocation();
 	}
 
@@ -118,7 +118,7 @@ public class SAXRDFaParser extends RDFaParser implements ContentHandler {
 	@Override
 	public void endElement(String uri, String localName, String qName)
 			throws SAXException {
-		endRDFaElement(uri, localName, qName);
+		endRDFaElement(uri, localName, qName, new SAXLocation(line, column));
 		saveLocation();
 	}
 
@@ -129,7 +129,7 @@ public class SAXRDFaParser extends RDFaParser implements ContentHandler {
 	public void characters(char[] ch, int start, int length)
 			throws SAXException {
 		// Capture text content for plain literal
-		writeLiteral(ch, start, length, new SAXLocation(line, column));
+		writeCharacters(ch, start, length, new SAXLocation(line, column));
 		saveLocation();
 	}
 

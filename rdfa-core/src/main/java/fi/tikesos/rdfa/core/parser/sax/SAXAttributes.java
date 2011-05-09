@@ -32,6 +32,7 @@ public class SAXAttributes implements fi.tikesos.rdfa.core.datatype.Attributes {
 	 */
 	public SAXAttributes(Attributes attributes, SAXLocation location) {
 		this.attributes = attributes;
+		this.location = location;
 	}
 
 	/**
