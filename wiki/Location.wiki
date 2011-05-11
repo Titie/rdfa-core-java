@@ -6,7 +6,7 @@ The main difference between the DOM and the SAX-parser is that the DOM-parser re
 
 = DOMLocation =
 
-Returns the node bound to the RDFa-attribute. If returned by a literal not defined in content-attribute, location is the parent node for the literal content.
+Returns the node bound to the RDFa-attribute. If returned by a literal not defined in a content-attribute, location is the parent node for the literal content.
 
 = SAXLocation =
 
