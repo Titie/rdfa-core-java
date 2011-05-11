@@ -9,3 +9,4 @@ Welcome to rdfa-core-java user's guide. This guide is a work in progress. Your c
   # [SAXExample Parsing RDFa document with SAX]
   # [DOMExample Parsing RDFa document with DOM]
   # [JenaExample Jena integration]
+  # [Location The difference between DOMLocation and SAXLocation]
