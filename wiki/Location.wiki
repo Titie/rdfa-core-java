@@ -2,11 +2,11 @@
 
 = DOMLocation and SAXLocation =
 
-The main difference between the DOM and the SAX-parser is that the DOM-parser returns the document node bound to the RDFa-attribute while the SAX-parser returns an estimate of the line and the column number.
+The main difference between the DOM and the SAX-parser is that the DOM-parser returns the node bound to the RDFa-attribute while the SAX-parser returns an estimate of the line and the column number.
 
 = DOMLocation =
 
-Returns the attribute node bound to the RDFa-attribute. If returned by a literal not defined in content-attribute, location is the parent node for the literal content.
+Returns the node bound to the RDFa-attribute. If returned by a literal not defined in content-attribute, location is the parent node for the literal content.
 
 = SAXLocation =
 
