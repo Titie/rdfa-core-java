@@ -7,7 +7,7 @@ XMLReader reader = XMLReaderFactory.createXMLReader();
 // Disable validation
 reader.setFeature("http://xml.org/sax/features/validation",
 			Boolean.FALSE);
-// Request parser to provide namespace prefixes as attributes
+// Request parser to provide namespace mappings in the Attributes list
 reader.setFeature("http://xml.org/sax/features/namespace-prefixes",
 		Boolean.TRUE);
 // Set entity resolver
